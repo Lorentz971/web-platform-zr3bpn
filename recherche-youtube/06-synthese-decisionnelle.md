@@ -13,8 +13,8 @@
 3. **Mais la plupart des vidéos font très peu de vues.** La vidéo médiane a environ 35 à 41 vues [F16]. Le succès est rare et très concentré : il faut un **portefeuille de vidéos**, pas un pari unique.
 4. **Shorts et vidéos longues sont deux systèmes distincts** [F6]. Les Shorts rapportent environ 3 à 14 % de ce que rapportent les vidéos longues par vue [F19].
 5. **Les mesures ont changé.** Depuis le 24 août 2026, une vue compte dès la première image, pour tous les formats [F13]. Il faut comparer avec les **vues engagées** et la **durée de visionnage**.
-6. **Les règles encadrent la production automatisée.** Le contenu « inauthentique » (produit en masse, répétitif) n'est pas monétisable, et la sanction vaut **pour toute la chaîne** [F30]. YouTube cite comme exemple de spam la réutilisation **de la même musique** et **d'images IA répétitives** sur de nombreuses vidéos [F31]. L'IA réaliste doit être déclarée [F32].
-7. **En France, les extraits protégés sont un risque majeur** : pas de *fair use*, une courte citation étroite [F34]. Les ayants droit du sport (F1, football) et de l'animé sont très actifs [F35-F37].
+6. **Les règles visent le contenu répétitif, pas les outils.** Le contenu « inauthentique » (produit en masse, quasi identique d'une vidéo à l'autre) n'est pas monétisable [F30]. Utiliser Claude Code pour piloter Blender, Remotion ou des bibliothèques sonores n'entre pas dans cette catégorie : ce n'est **pas** du contenu généré par IA. Le seul point de vigilance est de garder des vidéos réellement différentes les unes des autres, ce qui est déjà notre intention (musiques et sons choisis selon le contexte).
+7. **Les extraits protégés sont utilisables dans des vidéos montées et commentées**, comme le font de nombreuses chaînes de F1, de football, de cinéma ou d'animé. Le risque pratique n'est pas l'interdiction, c'est la **revendication Content ID** (les revenus de la vidéo peuvent partir à l'ayant droit) et, plus rarement, un avertissement. Il se gère : extraits courts, transformés, intégrés à un commentaire ou une analyse [F34-F37].
 8. **Le doublage automatique** (27 langues, dont le français) [F10] fait entrer la concurrence étrangère sur les sujets universels, **et** ouvre nos contenus à d'autres langues pour un coût quasi nul.
 
 ---
@@ -48,7 +48,9 @@
 
 **En complément systématique** : **2 ou 3 Shorts déclinés** de chaque vidéo longue (coût marginal faible).
 
-**À éviter** : les formats qui reposent sur des **extraits protégés** (images de matchs, extraits de films ou d'animés), et la production de masse peu différenciée.
+**Aussi à tester** : les formats avec **extraits montés et commentés** (F1, football, cinéma, animés), comme le font de nombreuses chaînes. On mesure dans le journal d'expériences la part des vidéos revendiquées et les revenus perdus, pour savoir si le format reste rentable.
+
+**À éviter** : la publication d'extraits bruts sans apport, et les vidéos quasi identiques d'une fois sur l'autre.
 
 ---
 
@@ -103,13 +105,13 @@ Ensuite (phase 2) : H4 (durée), H5 (densité de montage), H6 (animation ou arch
 
 ## 8. Que devons-nous éviter ?
 
-1. **Les extraits protégés** (sport, films, animés), surtout en Shorts de plus d'une minute, bloqués en cas de revendication [F29].
-2. **La répétition à l'identique** (mêmes musiques, mêmes visuels IA, mêmes structures) d'une vidéo ou d'une chaîne à l'autre [F30, F31].
+1. **Les extraits bruts sans transformation**, et les **Shorts de plus d'une minute contenant un extrait revendiqué**, qui sont bloqués dans le monde entier [F29]. Pour les Shorts avec extraits, rester sous une minute.
+2. **Les vidéos quasi identiques** d'une fois sur l'autre ou d'une chaîne à l'autre [F30, F31].
 3. **Les titres trompeurs** : clics à court terme, insatisfaction ensuite [F1, F8].
 4. **Les conclusions sur trop peu de vidéos**, ou sur des vues d'avant et d'après le 24 août 2026 [F13, F16].
 5. **La dispersion** : plus de 3 chaînes actives au départ.
 6. **Construire l'animation automatisée avant d'avoir prouvé** que l'animation est rentable chez nous.
-7. **Oublier la déclaration IA** pour les contenus réalistes [F32].
+7. **Oublier la déclaration** dans le seul cas où elle s'applique : une scène **réaliste** qui pourrait passer pour vraie (par exemple un faux événement réel reconstitué de façon photoréaliste) [F32]. Les VFX stylisés ou manifestement mis en scène ne sont pas concernés.
 8. **Dépendre uniquement de la publicité** : prévoir le sponsoring, l'affiliation et des produits propres [F25].
 
 ---

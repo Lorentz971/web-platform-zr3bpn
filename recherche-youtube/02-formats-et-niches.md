@@ -218,7 +218,7 @@ Pour remplacer les exemples qualitatifs par des données, avec l'API YouTube Dat
 | Sport en animation (sans images officielles) | ★★★★ | ★★★★★ | Faible | Élevé | ★★★★ | ★★★★ | **2** |
 | Histoires insolites | ★★★★★ | ★★★★ | Moyen | Moyen | ★★★ | ★★★ | **2** |
 | Cinéma / animés (sans extraits) | ★★★★ | ★★★ | Élevé si extraits | Moyen | ★★★ | ★★★ | **3** |
-| Sport avec images officielles | ★★★★★ | ★★ | **Très élevé** | Moyen | ★★ (revendications) | ★★ | ❌ À éviter |
+| Sport, cinéma, animés avec extraits montés et commentés | ★★★★★ | ★★★★ | Élevé (revendications), gérable | Moyen | ★★★ (une partie des revenus peut être revendiquée) | ★★★ | **2** (mesurer le taux de revendication) |
 | Shorts seuls | ★★★★★ | ★★★★★ | Variable | Faible | ★ | ★★ | En complément |
 
 **Lecture** : notre écosystème est le plus fort là où **l'animation remplace les images protégées** (explications, sport, histoire) et là où **la recherche narrative** fait la différence (documentaires, histoires insolites). Les formats qui dépendent d'extraits protégés (sport filmé, cinéma, animés) sont les plus risqués, surtout en France [F34].
