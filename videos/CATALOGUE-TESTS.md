@@ -35,27 +35,27 @@
 - ✅ tableau qui se remplit
 
 ## Pack 3 : parts et répartition (style 1)
-- ⏳ camembert
-- ⏳ carte proportionnelle (« treemap »)
-- ⏳ gaufre de 100 cases
-- ⏳ soleil (« sunburst »)
-- ⏳ barres à 100 %
-- ⏳ histogramme
-- ⏳ boîtes à moustaches
-- ⏳ essaim de points (« beeswarm »)
-- ⏳ pyramide des âges
-- ⏳ courbe en cloche
+- ✅ camembert
+- ✅ carte proportionnelle (« treemap »)
+- ✅ gaufre de 100 cases
+- ✅ soleil (« sunburst »)
+- ✅ barres à 100 %
+- ✅ histogramme
+- ✅ boîtes à moustaches
+- ✅ essaim de points (« beeswarm »)
+- ✅ pyramide des âges
+- ✅ courbe en cloche
 
 ## Pack 4 : liens et géographie (style 7)
-- ⏳ réseau de relations
-- ⏳ arbre généalogique / organigramme
-- ⏳ diagramme d'accords
-- ⏳ Venn
-- ⏳ carte colorée par pays
-- ⏳ flèches de flux
-- ⏳ zoom pays → ville
-- ⏳ globe qui tourne
-- ⏳ chronologie sur la carte
+- ✅ réseau de relations
+- ✅ arbre généalogique / organigramme
+- ✅ diagramme d'accords
+- ✅ Venn
+- ✅ carte colorée par pays
+- ✅ flèches de flux
+- ✅ zoom pays → ville
+- ✅ globe qui tourne
+- ✅ chronologie sur la carte
 
 ## Pack 5 : échelle et jeux (style 1)
 - ⏳ « X fois plus gros »
