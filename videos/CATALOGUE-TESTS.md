@@ -97,10 +97,10 @@
 - ✅ journal qui tourne
 
 ## Pack 9 : vues en coupe (styles 1 et 7)
-- ⏳ immeuble
-- ⏳ sous-marin
-- ⏳ fourmilière
-- ⏳ bunker
+- ✅ immeuble
+- ✅ sous-marin
+- ✅ fourmilière
+- ✅ bunker
 
 ## Pack 10 : les autres styles visuels
 - ⏳ infographie, tableau d'enquête, archives caviardées, isométrique 2.5D
