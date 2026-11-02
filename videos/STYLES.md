@@ -8,6 +8,11 @@ Le style de Depth Theory et Disasters Explained : formes vectorielles plates, d�
 - Test de référence (accroche sur les sectes, 35 s) : `cults/flat/FlatHook.tsx`
 - Rendu : environ 1 min pour 30 s de vidéo.
 
+## ✅ Style retenu : n° 7, pictogrammes d'« horreur analogique »
+Fond noir, pictogrammes au trait blanc lumineux, accent rouge, cartes « RULE », pièces à conviction (« EXHIBIT A »), bandeau d'archive et effets VHS. Univers original : *Municipal Bureau of Night Conditions*.
+- Test de référence (30 s) : `rules/RulesHook.tsx`
+- Rendu : environ 2 min 15 pour 30 s (à cause des effets VHS).
+
 ## 🗄️ Styles mis de côté (peut-être utiles dans d'autres cas)
 | Style | Fichiers | Verdict |
 |---|---|---|
