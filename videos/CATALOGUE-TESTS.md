@@ -77,24 +77,24 @@
 - ✅ compte à rebours
 
 ## Pack 7 : machines et écrans (style 1)
-- ⏳ tapis roulant d'usine
-- ⏳ distributeur
-- ⏳ ascenseur-classement
-- ⏳ fusée à étages
-- ⏳ vieux téléviseur
-- ⏳ terminal
-- ⏳ téléphone avec des messages
-- ⏳ moniteur cardiaque
+- ✅ tapis roulant d'usine
+- ✅ distributeur
+- ✅ ascenseur-classement
+- ✅ fusée à étages
+- ✅ vieux téléviseur
+- ✅ terminal
+- ✅ téléphone avec des messages
+- ✅ moniteur cardiaque
 
 ## Pack 8 : écrans et documents (style 7)
-- ⏳ panneau de contrôle
-- ⏳ panneau d'aéroport à lettres
-- ⏳ dossier tamponné
-- ⏳ fiche d'identité
-- ⏳ tableau d'enquête avec des fils rouges
-- ⏳ ticket de caisse qui s'imprime
-- ⏳ facture
-- ⏳ journal qui tourne
+- ✅ panneau de contrôle
+- ✅ panneau d'aéroport à lettres
+- ✅ dossier tamponné
+- ✅ fiche d'identité
+- ✅ tableau d'enquête avec des fils rouges
+- ✅ ticket de caisse qui s'imprime
+- ✅ facture
+- ✅ journal qui tourne
 
 ## Pack 9 : vues en coupe (styles 1 et 7)
 - ⏳ immeuble
