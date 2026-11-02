@@ -1,0 +1,59 @@
+{
+  "fps": 30.0,
+  "cuts_s": [
+    4.2
+  ],
+  "moves": [
+    {
+      "type": "PUNCH-IN",
+      "start_s": 0.97,
+      "dur_frames": 6,
+      "dur_s": 0.2,
+      "zoom_from": "100.0%",
+      "zoom_to": "140.0%",
+      "zoom_change": "+40.0%",
+      "peak_speed": "16.9% par image",
+      "half_reached_at": "2/6 images",
+      "easing": "ease-out (rapide puis freine)",
+      "target_in_start_frame_px": [
+        728,
+        673
+      ],
+      "target_pct": [
+        38,
+        62
+      ]
+    },
+    {
+      "type": "SLOW PUSH",
+      "start_s": 2.17,
+      "dur_frames": 60,
+      "dur_s": 2.0,
+      "zoom_from": "140.0%",
+      "zoom_to": "152.0%",
+      "zoom_change": "+8.6%",
+      "peak_speed": "0.1% par image",
+      "half_reached_at": "30/60 images",
+      "easing": "linéaire",
+      "target_in_start_frame_px": [
+        960,
+        540
+      ],
+      "target_pct": [
+        50,
+        50
+      ]
+    },
+    {
+      "type": "PAN",
+      "start_s": 5.2,
+      "dur_s": 1.23,
+      "move_px": [
+        0,
+        -398
+      ],
+      "move_pct_screen": "37% de la hauteur",
+      "peak_speed": "26.0 px/image"
+    }
+  ]
+}
