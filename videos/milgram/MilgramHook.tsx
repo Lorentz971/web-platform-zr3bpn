@@ -1,17 +1,17 @@
 import React from 'react';
 import {AbsoluteFill, Sequence, interpolate, spring, useCurrentFrame, useVideoConfig, Easing} from 'remotion';
 
-const FONT = '"DejaVu Sans", "Liberation Sans", Arial, sans-serif';
-const MONO = '"DejaVu Sans Mono", monospace';
-const BG = '#0d0f12';
-const PANEL = '#2a2f36';
-const AMBER = '#ffb547';
-const RED = '#ff4d4d';
-const PALE = '#e8e4da';
+export const FONT = '"DejaVu Sans", "Liberation Sans", Arial, sans-serif';
+export const MONO = '"DejaVu Sans Mono", monospace';
+export const BG = '#0d0f12';
+export const PANEL = '#2a2f36';
+export const AMBER = '#ffb547';
+export const RED = '#ff4d4d';
+export const PALE = '#e8e4da';
 
-const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
+export const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
 
-const GROUPS = [
+export const GROUPS = [
   'SLIGHT SHOCK',
   'MODERATE SHOCK',
   'STRONG SHOCK',
@@ -23,7 +23,7 @@ const GROUPS = [
 ];
 
 // Texte cinétique centré
-const Line: React.FC<{text: string; size?: number; color?: string; delay?: number; y?: number}> = ({
+export const Line: React.FC<{text: string; size?: number; color?: string; delay?: number; y?: number}> = ({
   text,
   size = 72,
   color = PALE,
@@ -51,7 +51,7 @@ const Line: React.FC<{text: string; size?: number; color?: string; delay?: numbe
 };
 
 // Effet machine à écrire
-const Typewriter: React.FC<{text: string; start?: number; cps?: number}> = ({text, start = 0, cps = 18}) => {
+export const Typewriter: React.FC<{text: string; start?: number; cps?: number}> = ({text, start = 0, cps = 18}) => {
   const frame = useCurrentFrame();
   const n = Math.max(0, Math.floor(((frame - start) / 30) * cps));
   const cursor = Math.floor(frame / 15) % 2 === 0 ? '▌' : ' ';
@@ -80,7 +80,7 @@ const SceneDate: React.FC = () => {
 };
 
 // Le générateur de chocs (30 interrupteurs)
-const ShockPanel: React.FC<{litUntil: number; pressed?: number; scale?: number}> = ({litUntil, pressed = -1, scale = 1}) => {
+export const ShockPanel: React.FC<{litUntil: number; pressed?: number; scale?: number}> = ({litUntil, pressed = -1, scale = 1}) => {
   const frame = useCurrentFrame();
   const W = 54;
   const GAP = 3;
@@ -163,7 +163,7 @@ const ScenePanel: React.FC = () => {
 };
 
 // Personnage stylisé
-const Person: React.FC<{color: string; coat?: boolean; seated?: boolean}> = ({color, coat, seated}) => (
+export const Person: React.FC<{color: string; coat?: boolean; seated?: boolean}> = ({color, coat, seated}) => (
   <svg width={140} height={seated ? 200 : 260} viewBox={`0 0 140 ${seated ? 200 : 260}`}>
     <circle cx={70} cy={40} r={32} fill={color} />
     <rect x={25} y={80} width={90} height={seated ? 90 : 150} rx={30} fill={coat ? '#8e949c' : color} />
@@ -263,7 +263,7 @@ const SceneTitle: React.FC = () => {
   );
 };
 
-const Fade: React.FC<{children: React.ReactNode; duration: number}> = ({children, duration}) => {
+export const Fade: React.FC<{children: React.ReactNode; duration: number}> = ({children, duration}) => {
   const frame = useCurrentFrame();
   const opacity = interpolate(frame, [0, 8, duration - 8, duration], [0, 1, 1, 0], clamp);
   return <AbsoluteFill style={{opacity}}>{children}</AbsoluteFill>;
