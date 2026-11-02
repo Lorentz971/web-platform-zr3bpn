@@ -103,8 +103,8 @@
 - ✅ bunker
 
 ## Pack 10 : les autres styles visuels
-- ⏳ infographie, tableau d'enquête, archives caviardées, isométrique 2.5D
-- ⏳ ordinateur rétro, plan technique (blueprint), ombres chinoises, typographie animée
-- ⏳ trait unique, frise documentaire, échelle, pictogrammes en couleur
+- ✅ infographie, tableau d'enquête, archives caviardées, isométrique 2.5D
+- ✅ ordinateur rétro, plan technique (blueprint), ombres chinoises, typographie animée
+- ✅ trait unique, frise documentaire, échelle, pictogrammes en couleur
 
-**Total : 69 éléments et 12 styles à tester.**
+**Total : 69 éléments et 12 styles, tous testés (le 2 novembre 2026).**
