@@ -58,23 +58,23 @@
 - ✅ chronologie sur la carte
 
 ## Pack 5 : échelle et jeux (style 1)
-- ⏳ « X fois plus gros »
-- ⏳ zoom infini
-- ⏳ empilement jusqu'à la Lune
-- ⏳ roue de la fortune
-- ⏳ ouverture d'un pack de cartes
-- ⏳ dés
-- ⏳ pile ou face
+- ✅ « X fois plus gros »
+- ✅ zoom infini
+- ✅ empilement jusqu'à la Lune
+- ✅ roue de la fortune
+- ✅ ouverture d'un pack de cartes
+- ✅ dés
+- ✅ pile ou face
 
 ## Pack 6 : jeux et machines (style 7)
-- ⏳ ticket à gratter
-- ⏳ plateau de jeu
-- ⏳ flipper
-- ⏳ grue à peluches
-- ⏳ balance
-- ⏳ sablier
-- ⏳ thermomètre
-- ⏳ compte à rebours
+- ✅ ticket à gratter
+- ✅ plateau de jeu
+- ✅ flipper
+- ✅ grue à peluches
+- ✅ balance
+- ✅ sablier
+- ✅ thermomètre
+- ✅ compte à rebours
 
 ## Pack 7 : machines et écrans (style 1)
 - ⏳ tapis roulant d'usine
