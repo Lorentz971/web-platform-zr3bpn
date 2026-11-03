@@ -73,9 +73,12 @@ def main():
                        + ([f'--browser-executable={a.navigateur}'] if a.navigateur else []), cwd=rdir, check=True)
         brut = os.path.join(rdir, 'out', 'montage.mp4'); video = os.path.join(out, 'montage.mp4')
         L = plan['volume_cible_lufs']                       # volume général calé sur celui du pattern
-        gain = _gain_lufs(brut, L)                         # gain exact mesuré (pyloudnorm), puis limiteur pour éviter la saturation
-        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', brut, '-c:v', 'copy', '-af', f'volume={gain:.2f}dB,alimiter=limit=0.89',
-                        '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', video], check=True)
+        gain = 0.0
+        for _ in range(3):                                 # gain mesuré (pyloudnorm), limiteur contre la saturation, puis on re-mesure
+            gain += _gain_lufs(video if _ else brut, L) if _ else _gain_lufs(brut, L)
+            subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', brut, '-c:v', 'copy', '-af', f'volume={gain:.2f}dB,alimiter=limit=0.89',
+                            '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', video], check=True)
+            if abs(_gain_lufs(video, L)) < 0.5: break
         print(f'Vidéo rendue : {video} (volume normalisé à {L} LUFS)')
         print('Boucle de conformité : ré-analyse de notre montage…')
         subprocess.run([sys.executable, os.path.join(HERE, 'analyse_montage.py'), video, os.path.join(out, 'analyse-du-rendu')], check=True)

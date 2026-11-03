@@ -37,6 +37,8 @@ def marqueurs(plan, path):
     for t in plan['transitions']: rows.append((t['t'], 'transition', f"{t['type']} ({t['images']} images)"))
     for z in plan['zooms']: rows.append((z['t0'], 'zoom', f"punch-in ×{z['de']} → ×{z['a']} en {z['dur_s']} s sur « {z['mot']} » ({z['courbe']})"))
     for e in plan['effets']: rows.append((e['t'], 'effet sonore', e['type']))
+    for o in plan['incrustations']:
+        if 't0' in o: rows.append((o['t0'], 'incrustation', f"{o['type']} jusqu'à {o['t1']:.2f} s, centre à {o['centre_pct']} % de l'écran, entrée : {o['entree']}" + (f", texte « {o['texte']} »" if o.get('texte') else '')))
     rows.sort()
     with open(path, 'w', newline='', encoding='utf-8') as f:
         w = csv.writer(f); w.writerow(['temps_s', 'timecode', 'type', 'action'])
@@ -175,7 +177,9 @@ def recette_md(plan, path, rows):
         m = plan['musique']
         L.append(f"9. **Musique** : {m['nom']} ({m['tempo_bpm']} BPM) à {m['niveau_db']} dB, baissée de **{m['baisse_sous_voix_db']} dB** quand on parle "
                  '(dans CapCut : « Atténuation automatique » / ducking, ou images clés de volume).')
-    if plan['incrustations']: L.append("10. **Barre de progression** en haut de l'écran sur toute la durée.")
+    if any(o['type'] == 'barre de progression' for o in plan['incrustations']): L.append("10. **Barre de progression** en haut de l'écran sur toute la durée.")
+    g = [o for o in plan['incrustations'] if 't0' in o]
+    if g: L.append(f"10 bis. **Incrustations** : {len(g)} éléments ({', '.join(sorted(set(o['type'] for o in g)))}), aux lignes « incrustation » (position, texte, entrée).")
     L.append(f"11. **Volume** : à l'export, normalisez à **{plan['volume_cible_lufs']} LUFS** (volume intégré mesuré sur la vidéo de référence).")
     if et:
         L += ['', '## Étalonnage', f"Cible : luminosité {et['cible'].get('luminosite')}, contraste {et['cible'].get('contraste')}, saturation {et['cible'].get('saturation')} "

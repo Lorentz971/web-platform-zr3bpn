@@ -47,7 +47,8 @@ const entree = (typ: string, n: number, local: number, W: number): React.CSSProp
     case 'fondu enchaîné': return {opacity: p};
     case 'glissement': return {transform: `translateX(${(1 - e) * W}px)`};
     case 'panoramique filé': return {transform: `translateX(${(1 - e) * W}px)`, _mb: Math.sin(Math.PI * p) * 60} as any;   // flou dans le sens du mouvement
-    case 'zoom de transition': return {transform: `scale(${1.8 - 0.8 * e})`, opacity: Math.min(1, p * 3), filter: `blur(${(1 - e) * 14}px)`};
+    case 'zoom de transition': {const q = Math.min(1, local / Math.max(1, n / 2)); const eq = Easing.out(Easing.cubic)(q);
+      return {transform: `scale(${2 - eq})`, filter: `blur(${(1 - eq) * 16}px)`};}
     case 'rotation de transition': return {transform: `rotate(${(1 - e) * 90}deg) scale(${1 + (1 - e) * 0.5})`};
     case 'rideau': return {clipPath: `inset(0 ${(1 - p) * 100}% 0 0)`};
     case 'glitch': return local < n ? {transform: `translateX(${((local * 37) % 11 - 5) * 6}px)`, filter: 'drop-shadow(8px 0 0 rgba(255,0,60,.8)) drop-shadow(-8px 0 0 rgba(0,220,255,.8))'} : {};
@@ -60,10 +61,10 @@ const sortie = (typ: string, n: number, k: number, W: number): React.CSSProperti
   const p = Math.min(1, Math.max(0, k / Math.max(1, n))); const e = Easing.out(Easing.cubic)(p);
   if (typ === 'glissement') return {transform: `translateX(${-e * W}px)`};
   if (typ === 'panoramique filé') return {transform: `translateX(${-e * W}px)`, _mb: Math.sin(Math.PI * p) * 60} as any;
-  if (typ === 'zoom de transition') return {transform: `scale(${1 + e * 0.8})`, filter: `blur(${e * 14}px)`};
+  if (typ === 'zoom de transition') return {transform: `scale(${1 + Easing.in(Easing.cubic)(p)})`, filter: `blur(${p * 16}px)`};
   return {};
 };
-const OVERLAP = ['fondu enchaîné', 'rideau', 'glissement', 'panoramique filé', 'zoom de transition', 'rotation de transition'];
+const OVERLAP = ['fondu enchaîné', 'rideau', 'glissement', 'panoramique filé', 'rotation de transition'];
 
 const Plan: React.FC<{clip: Clip; idx: number; muted?: boolean; handle: number}> = ({clip, idx, muted, handle}) => {
   const f = useCurrentFrame();                     // temps local à la séquence
@@ -75,6 +76,11 @@ const Plan: React.FC<{clip: Clip; idx: number; muted?: boolean; handle: number}>
   const hn = tn ? Math.min(tn.images, F(nxt!.src_in)) : 0;
   let st: React.CSSProperties = tr ? entree(tr.type, tr.images, f, width) : {};
   if (tn && hn > 0 && fg >= F(nxt!.t0) - hn) st = {...st, ...sortie(tn.type, hn, fg - (F(nxt!.t0) - hn), width)};
+  const tz = nxt && nxt.transition_entree && nxt.transition_entree.type === 'zoom de transition' ? nxt.transition_entree : undefined;
+  if (tz) {                                        // zoom de transition : le plan sortant s'enfonce dans l'image avant la coupe
+    const nz = Math.max(2, Math.round(tz.images / 2)); const k = fg - (F(nxt!.t0) - nz);
+    if (k >= 0) st = {...st, ...sortie('zoom de transition', nz, k, width)};
+  }
   const z = zoomAt(clip, idx, fg);
   return (
     <AbsoluteFill style={{overflow: 'hidden', ...st, ...((st as any)._mb > 0.5 ? {filter: `url(#mb${idx})`} : {})}}>
@@ -118,6 +124,32 @@ const SousTitre: React.FC<{s: any}> = ({s}) => {
       </div>
     </AbsoluteFill>
   );
+};
+
+// éléments graphiques dessinés par le code (aucune image générée) : bandeau, flèche, sticker, encart, texte animé
+const Graphique: React.FC<{o: any}> = ({o}) => {
+  const f = useCurrentFrame(); const {width, height} = useVideoConfig();
+  const dur = F(o.t1) - F(o.t0);
+  const out = interpolate(f, [dur - 5, dur], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  const glisse = (o.entree || '').includes('glissement');
+  const sc = glisse ? 1 : spring({frame: f, fps, config: {damping: 8, stiffness: 160, mass: 0.6}, from: 0.2, to: 1});
+  const dx = glisse ? interpolate(f, [0, 8], [-width, 0], {extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic)}) : 0;
+  const [cx, cy] = o.centre_pct || [50, 50];
+  const box: React.CSSProperties = {position: 'absolute', left: `${cx}%`, top: `${cy}%`, transform: `translate(-50%, -50%) translateX(${dx}px) scale(${sc * out})`};
+  const c = D.couleur_surlignage_hex || '#ffe600';
+  if (o.type === 'bandeau') return (
+    <div style={{...box, background: 'white', color: '#111', padding: `${height * 0.012}px ${width * 0.04}px`, borderLeft: `${width * 0.015}px solid ${c}`,
+      fontFamily: 'Montserrat', fontWeight: 900, fontSize: height * 0.03, boxShadow: '0 8px 24px rgba(0,0,0,.35)'}}>{o.texte}</div>);
+  if (o.type === 'encart / image' || o.type === 'texte animé') return (
+    <div style={{...box, background: o.type === 'texte animé' ? 'transparent' : c, color: o.type === 'texte animé' ? c : '#111', padding: `${height * 0.015}px ${width * 0.05}px`,
+      borderRadius: width * 0.03, fontFamily: 'Montserrat', fontWeight: 900, fontSize: height * (o.type === 'texte animé' ? 0.06 : 0.035),
+      WebkitTextStroke: o.type === 'texte animé' ? `${height * 0.004}px black` : undefined}}>{o.texte}</div>);
+  if (o.type === 'forme (flèche…)') return (
+    <svg style={{...box}} width={width * 0.36} height={width * 0.16} viewBox="0 0 260 120">
+      <polygon points="0,40 170,40 170,0 260,60 170,120 170,80 0,80" fill={c} stroke="black" strokeWidth={8} /></svg>);
+  return (
+    <div style={{...box, width: width * 0.2, height: width * 0.2, borderRadius: '50%', background: c, border: `${width * 0.012}px solid black`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Montserrat', fontWeight: 900, fontSize: width * 0.13, color: '#111'}}>!</div>);
 };
 
 const Barre: React.FC = () => {
@@ -165,6 +197,9 @@ export const PatternMontage: React.FC = () => {
       ) : null}
       {D.sous_titres.map((s: any, i: number) => (
         <Sequence key={'s' + i} from={F(s.t0)} durationInFrames={Math.max(1, F(s.t1) - F(s.t0))}><SousTitre s={s} /></Sequence>
+      ))}
+      {D.incrustations.filter((o: any) => o.t0 !== undefined).map((o: any, i: number) => (
+        <Sequence key={'g' + i} from={F(o.t0)} durationInFrames={Math.max(1, F(o.t1) - F(o.t0))}><Graphique o={o} /></Sequence>
       ))}
       {D.incrustations.some((o: any) => o.type === 'barre de progression') ? <Barre /> : null}
       {D.effets.map((e: any, i: number) => (

@@ -87,7 +87,7 @@ def analyse(video, events, moves, overlays):
     y2 = load(video)
     if y2 is None or np.abs(y2).max() < 1e-4: return dict(silence=True), np.array([])
     sr = 44100; mono = y2.mean(0)
-    out = dict(lufs_integre=round(float(pyloudnorm.Meter(sr).integrated_loudness(mono)), 1))
+    out = dict(lufs_integre=round(float(pyloudnorm.Meter(sr).integrated_loudness(y2.T)), 1))   # stéréo, comme les plateformes
     voc, acc = separate(y2, sr)
     out['separation_voix_musique'] = voc is not None
     m22 = librosa.resample(mono, orig_sr=sr, target_sr=22050)

@@ -305,6 +305,23 @@ def construire(P, rushes, musique=None, duree_max=None, format_=None, graine=0, 
     # 11) incrustations et étalonnage
     incr = []
     if R.get('barre_de_progression'): incr.append(dict(type='barre de progression', position='haut', couleur='#ff2d2d'))
+    # éléments graphiques (dessinés par le code : bandeau, flèche, sticker, encart, texte animé), même densité que le pattern
+    types_g = {t: n for t, n in (R.get('incrustations_par_type') or {}).items() if t in ('bandeau', 'forme (flèche…)', 'sticker / émoji', 'encart / image', 'texte animé')}
+    n_g = int(round(_ref(R, 'incrustations_par_minute', 0) * duree / 60))
+    if n_g and types_g:
+        pos = R.get('incrustations_positions') or {}
+        defaut = {'bandeau': [30, 82], 'forme (flèche…)': [35, 45], 'sticker / émoji': [75, 23], 'encart / image': [50, 30], 'texte animé': [50, 40]}
+        mots_forts = sorted(subs, key=lambda s_: -(max(len(w['w']) for w in s_['mots']) + 5 * any(ch.isdigit() for ch in s_['texte'])))
+        slots = sorted(mots_forts[:n_g * 2], key=lambda s_: s_['t0'])
+        if len(slots) > n_g: slots = [slots[int(i)] for i in np.linspace(0, len(slots) - 1, n_g)]
+        noms = list(types_g); poids = np.array([types_g[k] for k in noms], float); poids /= poids.sum()
+        anim = R.get('animation_entree_principale') or 'pop avec rebond'
+        for s_ in slots:
+            typ = str(rng.choice(noms, p=poids)); t0 = s_['t0']; t1 = min(duree, t0 + 2.0)
+            mot = max(s_['mots'], key=lambda w: len(w['w']))['w'].strip('.,!?')
+            incr.append(dict(type=typ, t0=round(t0, 3), t1=round(t1, 3), centre_pct=pos.get(typ, defaut[typ]), entree=anim,
+                             texte=(mot.upper() if typ in ('bandeau', 'encart / image', 'texte animé') else None)))
+
     img = R.get('image') or {}
     lk = [i['look'] for i in infos if i.get('look')]
     etal = None

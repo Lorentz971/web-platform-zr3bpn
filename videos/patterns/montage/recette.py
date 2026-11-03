@@ -57,6 +57,9 @@ def recette(P):
     ent = [o.get('entree') for o in ov if o.get('entree')]
     R['animation_entree_principale'] = max(set(ent), key=ent.count) if ent else None
     R['barre_de_progression'] = any(o['type'] == 'barre de progression' for o in ov)
+    R['incrustations_positions'] = {t: [round(float(np.median([o['centre_pct'][0] for o in ov if o['type'] == t and o.get('centre_pct')]))),
+                                        round(float(np.median([o['centre_pct'][1] for o in ov if o['type'] == t and o.get('centre_pct')])))]
+                                    for t in set(o['type'] for o in ov if o.get('centre_pct'))}
     # son
     fx = so.get('effets_sonores', [])
     R['effets_sonores_par_minute'] = _per_min(len(fx), dur)

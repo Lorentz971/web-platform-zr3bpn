@@ -140,10 +140,6 @@ def appearing(S, shots, caption_boxes, trans=()):
                 fx, fy = int(np.percentile(xs_, 1)), int(np.percentile(ys_, 1)); fw, fh = int(np.percentile(xs_, 99)) - fx + 1, int(np.percentile(ys_, 99)) - fy + 1
             M_ = sub[fy:fy + fh, fx:fx + fw]
             if M_.size and M_.mean() < 0.2: continue                 # rien n'a changé durablement à cet endroit (un objet qui passe)
-            kl = min(b - 1, ka + 10)                                 # une incrustation reste fixe à l'écran ; un objet lent, non
-            if kl > ka and M_.size and M_.any():
-                dd = cv2.absdiff(grays[kl], grays[ka])[fy:fy + fh, fx:fx + fw][M_ > 0]
-                if dd.size and np.median(dd) > 6: continue
             contrast_before = float(before[fy:fy + fh, fx:fx + fw].std()); contrast_after = float(aft[fy:fy + fh, fx:fx + fw].std())
             moved = math.hypot(cxs[-1] - cxs[0], cys[-1] - cys[0]) > 0.15 * min(AW, AH)
             if moved:
