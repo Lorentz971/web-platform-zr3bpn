@@ -286,6 +286,7 @@ def _rapid_frame(fr, n):
         r = describe_line(fr, bb, ws)
         wl = [sum(ch.isalnum() for ch in q[0]) for q in ws]
         grand_mot = len(wl) == 1 and wl[0] == 2 and r['conf'] >= 85 and h >= 0.04 * H0 and ws[0][0].isalpha()   # « IS », « ON », « GO » en gros
+        grand_mot = grand_mot or (len(wl) == 1 and ws[0][0].strip('.,!?').isdigit() and r['conf'] >= 80 and h >= 0.035 * H0)   # « 1 », « 2 », « 10 » en gros
         if r['conf'] >= 70 and (max(wl) >= 3 or len(wl) >= 2 or grand_mot):
             samples.append(dict(f=n, box=bb, moteur='rapidocr', **r))
     return dict(bands=[], samples=samples)
@@ -372,8 +373,11 @@ def scan(video, progress=True):
             strip[name] = run_l
         g2 = cv2.cvtColor(fr[::2, ::2], cv2.COLOR_BGR2GRAY).astype(np.float32)
         if top_bar or bot_bar: g2 = g2[top_bar // 2 + 1: g2.shape[0] - bot_bar // 2 - 1]
-        mu = cv2.blur(g2, (3, 3)); var = cv2.blur(g2 * g2, (3, 3)) - mu * mu
-        flat2 = float((var < 0.6).mean()) if g2.size else 0.0                 # aplats parfaits (graphiques, interfaces)
+        if g2.size and min(g2.shape) >= 3:                                     # image entièrement noire : rien à mesurer
+            mu = cv2.blur(g2, (3, 3)); var = cv2.blur(g2 * g2, (3, 3)) - mu * mu
+            flat2 = float((var < 0.6).mean())                                  # aplats parfaits (graphiques, interfaces)
+        else:
+            flat2 = 1.0
         q = (small // 32).reshape(-1, 3); _, cnt = np.unique(q[:, 0] * 64 + q[:, 1] * 8 + q[:, 2], return_counts=True)
         flatness = float(np.sort(cnt)[::-1][:8].sum() / cnt.sum())
         edges = cv2.Canny(g, 60, 160)

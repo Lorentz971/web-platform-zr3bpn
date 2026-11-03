@@ -99,6 +99,17 @@ def analyse(video, out='.', quiet=False, cache=None):
     moves = motion.detect(S, shots, exclude)
     shots = look.per_shot(S, shots, capt, others, ovl)
     shots = contenu.par_plan(S, shots)                       # personnes, cadrage, geste, expression
+    def _plan(t):
+        return next((s for s in shots if s['start_s'] <= t < s['end_s']), None)
+    def _sur_personne(o):
+        s = _plan(o['start_s']); c = (s or {}).get('contenu') or {}
+        if not c.get('sujet_boite_pct') or c.get('cadrage') not in ('gros plan', 'plan moyen') or (s or {}).get('type_de_plan') != 'face caméra': return False
+        bx, by, bw, bh = c['sujet_boite_pct']; cx, cy = o.get('centre_pct', [0, 0])
+        return bx <= cx <= bx + bw and by <= cy <= by + bh
+    # face caméra : la tête et les mains bougent, ce ne sont ni des rotations de caméra, ni du velocity, ni des flèches
+    moves = [m for m in moves if not ((_plan(m['start_s']) or {}).get('type_de_plan') == 'face caméra'
+                                      and (m['type'] == 'rampe de vitesse (velocity)' or (m['type'] == 'rotation' and abs(m.get('degres') or 0) < 5)))]
+    ovl = [o for o in ovl if not (o['type'] in ('forme (flèche…)', 'encart / image', 'sticker / émoji') and not o.get('texte') and _sur_personne(o))]
     contenu._fermer()
     log('4/6 Son (voix, musique, effets)…')
     if cache and os.environ.get('SKIP_AUDIO') and os.path.exists(cache + '.audio.pkl'): so, beat_t = pickle.load(open(cache + '.audio.pkl', 'rb'))
@@ -122,6 +133,9 @@ def analyse(video, out='.', quiet=False, cache=None):
         import librosa
         y2 = audio.load(video)
         M = musique.analyse(librosa.resample(y2.mean(0), orig_sr=44100, target_sr=22050), 22050, voix=so.get('voix_segments_s')) if y2 is not None else None
+        if M and (so.get('temps_de_parole_pct') or 0) >= 70 and not so.get('tempo_bpm') and not so.get('baisse_musique_sous_voix_db'):
+            M = dict(tempo_bpm=None, temps_s=[], premiers_temps_s=[], grosse_caisse_s=[], caisse_claire_s=[], drops=[], filtres=[], parties=[],
+                     remarque='vidéo de parole sans musique marquée : pas de drops ni de parties musicales')
     except Exception as ex:
         M = None; log('  (analyse musicale impossible :', ex, ')')
     # boucle : la fin ressemble-t-elle au début ? (on revoit la vidéo sans s'en rendre compte)
