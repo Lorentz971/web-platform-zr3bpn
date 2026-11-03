@@ -44,21 +44,25 @@ def main():
     ap.add_argument('--sortie', default='montage'); ap.add_argument('--rendu', action='store_true'); ap.add_argument('--graine', type=int, default=0)
     ap.add_argument('--node-modules', help='dossier node_modules existant à réutiliser (évite npm install)')
     ap.add_argument('--navigateur', help='Chrome / Chromium à utiliser pour le rendu Remotion (sinon Remotion télécharge le sien)')
+    ap.add_argument('--sons', help='dossier de nos effets sonores (whoosh, impacts, risers…) à la place des sons fabriqués')
     a = ap.parse_args()
     P = json.load(open(os.path.join(a.pattern, 'pattern.json') if os.path.isdir(a.pattern) else a.pattern))
     out = os.path.abspath(a.sortie); os.makedirs(out, exist_ok=True)
     plan = planif.construire(P, a.rushs, musique=a.musique, duree_max=a.duree, format_=a.format, graine=a.graine)
-    exporter(plan, out, a.pattern, rendu=a.rendu, navigateur=a.navigateur, node_modules=a.node_modules)
+    exporter(plan, out, a.pattern, rendu=a.rendu, navigateur=a.navigateur, node_modules=a.node_modules, sons=a.sons)
 
 
-def exporter(plan, out, pattern, rendu=False, navigateur=None, node_modules=None):
+def exporter(plan, out, pattern, rendu=False, navigateur=None, node_modules=None, sons=None):
     """Écrit tous les exports d'un plan de montage (et rend la vidéo avec Remotion si rendu=True)."""
     os.makedirs(out, exist_ok=True)
     sfx = sfx_lib.ecrire(os.path.join(out, 'sfx'))
-    json.dump(plan, open(os.path.join(out, 'plan-de-montage.json'), 'w'), ensure_ascii=False, indent=1)
     chemins = {r['nom']: r['chemin'] for r in plan['rushs']}
     if plan.get('musique'): chemins[plan['musique']['nom']] = plan['musique']['src']
     for nom, v in sfx.items(): chemins[f'{nom}.wav'] = v['fichier']
+    if sons:                                               # nos propres effets sonores à la place des sons fabriqués
+        from montage import sons as sons_mod
+        chemins.update(sons_mod.appliquer(plan, sons if isinstance(sons, dict) else sons_mod.classer(sons), os.path.join(out, 'sfx')))
+    json.dump(plan, open(os.path.join(out, 'plan-de-montage.json'), 'w'), ensure_ascii=False, indent=1)
     exports.srt(plan, os.path.join(out, 'sous-titres.srt'))
     rows = exports.marqueurs(plan, os.path.join(out, 'marqueurs.csv'))
     os.makedirs(os.path.join(out, 'davinci'), exist_ok=True); os.makedirs(os.path.join(out, 'capcut'), exist_ok=True)
@@ -86,6 +90,7 @@ def exporter(plan, out, pattern, rendu=False, navigateur=None, node_modules=None
                             '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', video], check=True)
             if abs(_gain_lufs(video, L)) < 0.5: break
         print(f'Vidéo rendue : {video} (volume normalisé à {L} LUFS)')
+        if not pattern: return
         print('Boucle de conformité : ré-analyse de notre montage…')
         subprocess.run([sys.executable, os.path.join(HERE, 'analyse_montage.py'), video, os.path.join(out, 'analyse-du-rendu')], check=True)
         ref = os.path.join(pattern, 'pattern.json') if os.path.isdir(pattern) else pattern

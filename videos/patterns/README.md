@@ -8,6 +8,7 @@ Trois étapes, trois commandes :
 3. APPLIQUER  python3 appliquer_pattern.py pattern.json NOS_RUSHS…  → projet Remotion, timeline DaVinci, recette CapCut
    VÉRIFIER   python3 comparer.py pattern.json notre/pattern.json   → conformité de notre montage, mesure par mesure
 4. REFAIRE    python3 remplir_modele.py pattern.json NOS_RUSHS… --musique NOTRE_MUSIQUE   → le même edit, case par case, avec nos images
+5. SCRIPT     python3 monter_script.py script.txt NOS_RUSHS… --musique NOTRE_MUSIQUE      → l'edit qu'on a écrit, plan par plan
 ```
 
 Pour récupérer une vidéo YouTube ou TikTok : `yt-dlp -f "bv*+ba/b" -o video.mp4 URL`
@@ -118,6 +119,39 @@ pourquoi, **la liste des plans à tourner** quand aucun rush ne colle, les texte
 qu'à la section 3 (Remotion, DaVinci, CapCut, marqueurs). Les effets que le rendu ne fait pas encore tout seul
 (masques, velocity, néon…) sont listés en « effet à faire » avec leur timecode ; ils arrivent à l'étape suivante.
 
+## 5. Monter à partir d'un script
+
+On écrit les plans ; l'outil va chercher chaque moment dans nos rushs **par le sens** (CLIP : « dunk », « foule qui
+crie », « voiture sous la pluie », en français ou en anglais), cale tout sur notre musique et exporte.
+
+```
+python3 monter_script.py script.txt MES_RUSHS/ --musique ma-musique.mp3 [--sons MES_SONS/] [--variantes 2] [--rendu]
+```
+
+`script.txt` — un plan par ligne : `durée | ce qu'on voit | texte | effets et sons`
+
+```
+format: vertical
+2 temps | LeBron marche dans le tunnel | THE KING
+2 temps | gros plan visage concentré
+--- drop ---
+1 temps | dunk | | flash, impact
+1 temps | foule qui crie | | zoom
+2 temps | célébration bras levés | GOAT | whoosh
+4 temps | LeBron sourit | | ralenti
+```
+
+- **Durée** : `2 temps` (sur la musique) ou `1.5 s`. `--- drop ---` : la ligne suivante tombe sur le drop.
+- **Effets** : flash, fondu, glissement, glitch, zoom, dézoom, ralenti, accéléré, secousse. **Sons** : whoosh, impact,
+  pop, riser, clic, ding, glitch.
+- **Fin propre** : le montage s'arrête sur le premier temps d'une mesure (aussi avec `--duree`), avec un petit fondu.
+- **Nos sons** (`--sons DOSSIER`, aussi pour `remplir_modele.py` et `appliquer_pattern.py`) : vos fichiers remplacent
+  les sons fabriqués. Ils sont rangés par leur nom (« whoosh_03.wav », « impact boom.mp3 », sous-dossiers compris) ou, si
+  le nom ne dit rien, à l'écoute. Plusieurs fichiers d'un même type sont utilisés à tour de rôle.
+- **Chercher dans ses rushs** : `python3 remplir_modele.py --chercher "foule qui crie" MES_RUSHS/` (par le sens aussi).
+- **Plusieurs caméras** : `python3 synchroniser.py CAM_A.mp4 CAM_B.mp4 MICRO.wav` donne le décalage de chacune par
+  rapport à la première, au centième de seconde, par le son.
+
 ## Installation (une seule fois par ordinateur)
 
 | Où | Quoi faire |
@@ -129,7 +163,8 @@ qu'à la section 3 (Remotion, DaVinci, CapCut, marqueurs). Les effets que le ren
 
 L'installateur met : ffmpeg, Tesseract (anglais + français), les modules Python (`requirements.txt`), espeak-ng (vidéo de test),
 Node.js (rendu Remotion), puis télécharge une fois les **modèles d'écoute** (~600 Mo, `telecharger_modeles.py`, dans
-`~/.cache/analyse-montage`) : Parakeet (transcription mot par mot), Silero (voix), Spleeter (voix / musique). Sans les
+`~/.cache/analyse-montage`) : Parakeet (transcription mot par mot), Silero (voix), Spleeter (voix / musique), MediaPipe (personnes, gestes),
+CLIP (recherche par le sens, ~600 Mo de plus). Sans les
 modèles, l'outil marche quand même mais estime la voix au lieu de la transcrire.
 
 **Vérifier** : `python3 verifier_installation.py` (installations + auto-test, doit donner **23 / 23**) ; `--rapide` pour les installations seules.
@@ -144,6 +179,7 @@ modèles, l'outil marche quand même mais estime la voix au lieu de la transcrir
 | `video-test-effets2.py` → `verifier_effets2.py` | 20 s : texte qui suit une balle, kaléidoscope, shake sur les temps, cymbale inversée, musique normale et « slowed + reverb » | **6 / 6** |
 | `video-test-musique.py` → `verifier_musique.py` | musique à 128 BPM : intro étouffée, drop à l'ouverture du filtre, silence puis drop | **5 / 5** |
 | `verifier_modele.py` | Une fausse analyse d'edit (120 BPM, drop au temps 16) et une banque de rushs au contenu connu, remplie sur une musique à 95 BPM | **21 / 21** : drop sur le drop, durées au nouveau tempo, coupes sur les temps, bon rush par case, gestes calés, pas de doublon, transitions, textes (pas le score TV), bruitages, variantes, recherche, cadrage sans énorme zoom, zooms doux sans bords noirs, mélange « ordre » et « un » |
+| `verifier_script.py` | Un script, des rushs dessinés au contenu connu, des sons fabriqués sans nom parlant, deux « caméras » décalées de 2,37 s | **10 / 10** : lecture du script, recherche par le sens en français 4/4, bon moment par ligne, ligne sur le drop, effets, textes, nos sons rangés à l'écoute et utilisés, synchro au centième |
 | La même vidéo n° 2, abîmée | très compressée / caméra à la main / bruit et flou | **36 / 32 / 27 sur 42** (détail dans `verification_v2.md`) |
 | `video-test-rushs.py` | Faux rushs (face caméra + 2 illustrations + musique) pour tester `appliquer_pattern.py --rendu` de bout en bout | conformité de notre montage au pattern : **58 à 61 %** (`conformite-exemple.md`) ; rythme, coupes, débit, sous-titres, barre de progression justes |
 
@@ -163,6 +199,8 @@ modèles, l'outil marche quand même mais estime la voix au lieu de la transcrir
 - **Logos sur un sujet immobile** : un sponsor sur une combinaison qui ne bouge pas peut encore passer pour un texte ; ajoutez la marque dans `montage/marques.txt`.
 - **Masques non encore reconnus** : texte qui passe derrière un sujet sans changement de fond, sujet qui sort du cadre, clones ; un panneau blanc derrière un sujet peut être pris pour une silhouette.
 
+- **Recherche par le sens** : CLIP reconnaît bien les scènes et les actions courantes (dunk, voiture, foule, podium),
+  moins bien les détails fins ou les personnes précises (il ne sait pas qui est LeBron). Écrivez ce qu'on VOIT.
 - **Remplissage** : l'outil ne voit que ce que MediaPipe reconnaît (personnes, cadrage, quelques gestes, expressions) ; il ne sait pas encore qui est la personne ni ce qu'elle fait (dunk, dépassement…). Une case « plan large » ne trouvera rien si tous vos rushs sont des gros plans : c'est dit dans « plans à tourner ».
 
 - **Grain fin** : effacé par la compression des plateformes, il n'est plus mesurable (seul point faux du test n° 2).

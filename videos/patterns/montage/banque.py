@@ -5,9 +5,9 @@ On peut ensuite chercher dedans (« gros plan bras levés », « plan large mouv
 import json, os, re
 import numpy as np
 import cv2
-from . import contenu
+from . import contenu, sens
 
-VERSION = 2
+VERSION = 3
 PAS_CONTENU_S = 0.5          # une description (MediaPipe) toutes les 0,5 s
 PAS_MOUVEMENT_S = 0.1
 
@@ -25,7 +25,8 @@ def indexer_rush(path, log=print):
     fps = cap.get(cv2.CAP_PROP_FPS) or 30; N = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
     W, H = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     pas_m = max(1, int(round(fps * PAS_MOUVEMENT_S))); pas_c = max(1, int(round(fps * PAS_CONTENU_S)))
-    prev = None; prev_h = None; mouv = []; coupes = []; ech = []; i = 0
+    prev = None; prev_h = None; mouv = []; coupes = []; ech = []; i = 0; petites = []
+    avec_sens = sens.disponible()
     while True:
         ok = cap.grab()
         if not ok: break
@@ -50,9 +51,15 @@ def indexer_rush(path, log=print):
                 d_ = contenu.decrire(fr) if contenu.disponible() else None
                 if d_: e.update({k: d_[k] for k in ('personnes', 'cadrage', 'geste', 'expression', 'sujet_boite_pct') if k in d_})
                 ech.append(e)
+                if avec_sens:                                       # image réduite gardée pour CLIP (calcul par lots à la fin)
+                    sc = 256 / min(fr.shape[:2]); petites.append(cv2.resize(fr, (round(fr.shape[1] * sc), round(fr.shape[0] * sc)), interpolation=cv2.INTER_AREA))
         i += 1
     cap.release()
     duree = N / fps if N else (i / fps)
+    vec = None
+    if avec_sens and petites:
+        try: vec = sens.vers_texte(sens.images(petites))
+        except Exception as ex: log(f'  (recherche par le sens indisponible : {ex})')
     tm = np.array([m[0] for m in mouv]) if mouv else np.zeros(0); vm = np.array([m[1] for m in mouv]) if mouv else np.zeros(0)
     for e in ech:                                                   # mouvement moyen autour de chaque échantillon (±0,3 s)
         sel = vm[(tm >= e['t'] - 0.3) & (tm <= e['t'] + 0.3)] if len(tm) else []
@@ -60,7 +67,7 @@ def indexer_rush(path, log=print):
     bornes = [0.0] + coupes + [round(duree, 2)]
     segments = [dict(de=a, a=b) for a, b in zip(bornes, bornes[1:]) if b - a > 0.2]
     info = dict(nom=os.path.basename(path), chemin=os.path.abspath(path), duree_s=round(duree, 2), fps=round(fps, 3), largeur=W, hauteur=H,
-                orientation='vertical' if H > W else 'horizontal' if W > H else 'carré', segments=segments, echantillons=ech)
+                orientation='vertical' if H > W else 'horizontal' if W > H else 'carré', segments=segments, echantillons=ech, sens=vec)
     gestes = sorted({e['geste'] for e in ech if e.get('geste') and e['geste'] != 'debout, neutre'})
     log(f"  {info['nom']} : {duree:.1f} s, {len(segments)} séquence(s), {sum(1 for e in ech if e.get('personnes'))}/{len(ech)} moments avec quelqu'un"
         + (f", gestes : {', '.join(gestes)}" if gestes else ''))
@@ -84,7 +91,7 @@ def indexer(chemins, log=print):
         k = _cle(f)
         if k in caches[d]: banque.append(caches[d][k]); log(f"  {os.path.basename(f)} : déjà indexé"); continue
         info = indexer_rush(f, log); caches[d][k] = info; banque.append(info)
-        try: json.dump(caches[d], open(c, 'w'), ensure_ascii=False)
+        try: json.dump({k_: {a: b for a, b in v.items() if not a.startswith('_')} for k_, v in caches[d].items()}, open(c, 'w'), ensure_ascii=False)
         except OSError: pass
     contenu._fermer()
     return banque
@@ -117,12 +124,34 @@ def classe_mouvement(v):
     return 'fort' if v > 1.6 else 'moyen' if v > 0.5 else 'calme'
 
 
+def vecteurs(r):
+    if '_vec' not in r: r['_vec'] = sens.depuis_texte(r['sens']) if r.get('sens') else None
+    return r['_vec']
+
+
+def preparer_requete(banque, requete):
+    """Similarité de chaque moment de chaque rush avec la phrase, ramenée à un score centré-réduit sur toute la banque
+    (le meilleur moment ressort, quelle que soit l'échelle de CLIP). Renvoie {chemin: tableau} ou None."""
+    if not requete or not sens.disponible() or not any(r.get('sens') for r in banque): return None
+    q = sens.texte([requete])[0]; sims = {r['chemin']: vecteurs(r) @ q for r in banque if vecteurs(r) is not None}
+    allv = np.concatenate(list(sims.values()))
+    m, e = float(np.median(allv)), float(np.std(allv)) + 1e-6
+    return {k: (v - m) / e for k, v in sims.items()}
+
+
 def score_fenetre(r, t0, d, besoin):
     """Note d'une fenêtre [t0, t0+d] d'un rush par rapport au besoin d'une case. Renvoie (note, explications, moment_du_geste)."""
-    E = [e for e in r['echantillons'] if t0 - 0.01 <= e['t'] <= t0 + d + 0.01] or \
-        [min(r['echantillons'], key=lambda e: abs(e['t'] - (t0 + d / 2)))] if r['echantillons'] else []
+    idx = [k for k, e in enumerate(r['echantillons']) if t0 - 0.01 <= e['t'] <= t0 + d + 0.01]
+    if not idx and r['echantillons']: idx = [min(range(len(r['echantillons'])), key=lambda k: abs(r['echantillons'][k]['t'] - (t0 + d / 2)))]
+    E = [r['echantillons'][k] for k in idx]
     if not E: return 0.0, [], None
     note = 0.0; ok = []; manque = []; t_geste = None
+    S = (besoin.get('_sens') or {}).get(r['chemin'])
+    if S is not None and len(S) == len(r['echantillons']):          # recherche par le sens (CLIP) : le plus important
+        z = S[idx]; v = 0.3 * float(np.max(z)) + 0.7 * float(np.mean(z))    # toute la fenêtre doit correspondre, pas un seul instant
+        note += 2.5 * v
+        if v > 1.5: ok.append(f"« {besoin.get('requete')} »")
+        elif besoin.get('requete'): manque.append(f"« {besoin.get('requete')} »")
     cad = besoin.get('cadrage')
     if cad:
         part = np.mean([e.get('cadrage', 'sans personne') == cad for e in E])
@@ -175,7 +204,8 @@ def fenetres(r, d, pas=0.25):
 
 def chercher(banque, besoin, duree=1.5, n=10, exclure=()):
     """Les n meilleurs moments de la banque pour un besoin (dict ou texte libre)."""
-    if isinstance(besoin, str): besoin = besoin_depuis_texte(besoin)
+    if isinstance(besoin, str):
+        q = besoin; besoin = besoin_depuis_texte(q); besoin['requete'] = q; besoin['_sens'] = preparer_requete(banque, q)
     res = []
     for r in banque:
         for t0, d, vit in fenetres(r, duree, pas=0.5):

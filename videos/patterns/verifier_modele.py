@@ -103,6 +103,13 @@ court = [rush('court.mp4', 1.0, lambda t: dict(cadrage='plan large', personnes=1
 pc = rp.remplir(T, P, court, graine=0, log=lambda *a: None)
 check('Rush trop court : ralenti au lieu d\'un trou', 'case 1 remplie avec vitesse < 1', f"vitesse {pc['clips'][0].get('vitesse')}", 0 < (pc['clips'][0].get('vitesse') or 1) < 1)
 
+pt = [x - deb for x in M1['premiers_temps_s']]
+check('Fin propre : le montage s\'arrête sur le premier temps d\'une mesure', 'écart < 0,03 s', f"{min(abs(plan['duree_s'] - x) for x in pt):.3f} s",
+      min(abs(plan['duree_s'] - x) for x in pt) < 0.03)
+pd = rp.remplir(T, P, B, musique='notre.wav', M=M1, graine=0, duree_max=9.0, log=lambda *a: None)
+check('Durée imposée (--duree 9) : fin sur une mesure, sans dépasser', '≤ 9 s, sur un premier temps', f"{pd['duree_s']:.2f} s",
+      pd['duree_s'] <= 9.0 + 1e-3 and min(abs(pd['duree_s'] - x) for x in pt) < 0.03)
+
 # --- cadrage, zooms, mélange
 V = dict(largeur=720, hauteur=1280); Hz = dict(largeur=1920, hauteur=1080); C = dict(largeur=576, hauteur=576)
 modes = (rp.mode_cadrage(V, 1920, 1080), rp.mode_cadrage(Hz, 1080, 1920), rp.mode_cadrage(C, 1920, 1080), rp.mode_cadrage(Hz, 1920, 1080))

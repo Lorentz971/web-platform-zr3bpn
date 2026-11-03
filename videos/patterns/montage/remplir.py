@@ -48,7 +48,7 @@ def recaler(T, M, duree_max=None):
             # le drop de l'original sur le drop de la nouvelle musique qui fait perdre le moins de cases au début
             first = cases[0]['debut_temps']
             cand = sorted(d_new, key=lambda k: (max(0, -(first + k - d_old[0])), abs(k - d_old[0])))
-            off = cand[0] - d_old[0]; quoi = f"drop de l'original (temps {d_old[0]:.1f}) sur le drop de la nouvelle musique ({_t_de(cand[0], tb):.2f} s)"
+            off = cand[0] - d_old[0]; quoi = f"drop {'du script' if T.get('source') == 'script' else 'de l original'.replace(' l ', " l'")} (temps {d_old[0]:.1f}) sur le drop de la nouvelle musique ({_t_de(cand[0], tb):.2f} s)"
         off = round(off)                                         # nombre entier de temps : on garde la place dans la mesure
         brut = [(_t_de(c['debut_temps'] + off, tb), _t_de(c['debut_temps'] + c['duree_temps'] + off, tb)) for c in cases]
         # finition : chaque coupe calée sur un temps de l'original est aimantée au coup le plus proche de la nouvelle musique
@@ -65,7 +65,21 @@ def recaler(T, M, duree_max=None):
             a2, b2 = max(a, debut), min(b, fin_mus)
             if duree_max: b2 = min(b2, debut + duree_max)
             bornes.append((round(a2 - debut, 3), round(b2 - debut, 3)) if b2 - a2 > 0.08 else None)
-        tempo = M.get('tempo_bpm'); expl = f"recalé en temps musicaux : {quoi} ; tempo {Tm.get('tempo_bpm')} → {tempo} BPM"
+        tempo = M.get('tempo_bpm'); expl = f"recalé en temps musicaux : {quoi}" + (f" ; tempo {Tm.get('tempo_bpm')} → {tempo} BPM" if T.get('source') != 'script' else f" ; {tempo} BPM")
+        # fin propre : le montage s'arrête sur le premier temps d'une mesure (pas au milieu d'une phrase musicale)
+        pt = [x - debut for x in (M.get('premiers_temps_s') or [])]; vis = [k_ for k_, b_ in enumerate(bornes) if b_]
+        if pt and vis:
+            fin = bornes[vis[-1]][1]; per_ = float(np.median(np.diff(tb)))
+            lim = min(fin_mus - debut, duree_max if duree_max else 1e9)
+            # la mesure la plus proche de la fin voulue, sans dépasser la musique ni la durée imposée
+            cand = [x for x in pt if 0.5 < x <= lim + 1e-3 and abs(x - fin) <= 4 * per_ + 1e-3]
+            if cand:
+                x = min(cand, key=lambda x: (abs(x - fin), -x))
+                for k_ in vis:
+                    a_, b_ = bornes[k_]
+                    if a_ >= x - 0.3: bornes[k_] = None                       # case qui commencerait après la fin (ou trop court)
+                    elif b_ > x or k_ == max(j for j in vis if bornes[j] and bornes[j][0] < x - 0.3): bornes[k_] = (a_, round(x, 3))
+                expl += " ; fin sur le premier temps d'une mesure"
         return bornes, round(debut, 3), expl
     # pas de musique dans l'original (ou pas de temps dans la nouvelle) : on garde les durées en secondes
     t0 = cases[0]['debut_s']; bornes = []
@@ -95,7 +109,7 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
     """cadrage : auto | recadre | flou. zooms_mode : doux (petits zooms, un par case au plus) | garder (comme l'original) | aucun.
     melange : libre (le meilleur rush pour chaque case) | ordre (on avance dans nos rushs dans l'ordre, sans revenir en arrière) | un (un seul rush pour tout l'edit)."""
     rng = np.random.default_rng(graine)
-    R = recette(P)
+    R = recette(P) if P else {'lufs': T.get('volume_lufs')}
     if musique and M is None: M = charger_musique(musique)
     bornes, debut_mus, expl = recaler(T, M if musique else None, duree_max)
     log('  ' + expl)
@@ -112,19 +126,22 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
         if bo is None: continue
         t0, t1 = bo; d = round(t1 - t0, 3); k = d / max(c['duree_s'], 1e-3)           # k : étirement de la case
         besoin = {kk: v for kk, v in c['besoin'].items() if v is not None and kk != 'type_de_plan'}
+        if besoin.get('requete'): besoin['_sens'] = bq.preparer_requete(banque, besoin['requete'])
         if c.get('vitesse') and besoin.get('mouvement') == 'calme': besoin['mouvement'] = 'moyen'
         cands = []
         for r in banque:
             if seul and r['chemin'] != seul: continue
             ri = ordre_rushs.index(r['chemin'])
             if melange == 'ordre' and not (ri == pos[0] or ri == pos[0] + 1): continue
-            for w0, wd, vit in bq.fenetres(r, d):
+            vl = c.get('vitesse_lecture') or 1.0                    # ralenti / accéléré demandé : on prend plus ou moins de rush
+            for w0, wd, vit in bq.fenetres(r, round(d * vl, 3)):
+                vit = round(vit * vl, 3) if vl != 1 else vit
                 if melange == 'ordre' and ri == pos[0] and w0 < pos[1] - 1e-3: continue
                 s, why, tg = bq.score_fenetre(r, w0, wd, besoin)
                 rec = sum(min(w0 + wd, b_) - max(w0, a_) for ch, a_, b_ in utilises if ch == r['chemin'] and min(w0 + wd, b_) > max(w0, a_))
                 s -= 3 * rec / wd                                   # déjà utilisé : on évite de montrer deux fois la même chose
                 if r['chemin'] == prev_rush: s -= 0.8               # deux cases de suite dans le même rush : moins bien
-                if vit < 1: s -= 2 * (1 - vit)                      # rush trop court → ralenti
+                if vit < vl - 1e-6: s -= 2 * (1 - vit / vl)        # rush trop court → ralenti en plus
                 if (r['orientation'] == 'horizontal') != (fmt == 'horizontal') and r['orientation'] != 'carré': s -= 0.3
                 cands.append((s, r, w0, wd, vit, why, tg))
         if not cands and melange == 'ordre':                        # fin des rushs : on recommence au premier
@@ -142,9 +159,9 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
             p = np.exp(np.array([x[0] for x in top]) - top[0][0]); pick = top[int(rng.choice(len(top), p=p / p.sum()))]
         else: pick = cands[0]
         s, r, w0, wd, vit, why, tg = pick
-        if tg is not None and vit >= 1:                             # geste : on le fait arriver tôt dans la case (sur la coupe / le temps)
+        if tg is not None and vit >= (c.get('vitesse_lecture') or 1.0) - 1e-6:                             # geste : on le fait arriver tôt dans la case (sur la coupe / le temps)
             lead = min(0.25 * d, 0.4); seg = next(sg for sg in r['segments'] if sg['de'] - 1e-3 <= w0 <= sg['a'])
-            w0 = round(float(np.clip(tg - lead, seg['de'], seg['a'] - d)), 3)
+            w0 = round(float(np.clip(tg - lead * (c.get('vitesse_lecture') or 1.0), seg['de'], seg['a'] - wd)), 3)
         utilises.append((r['chemin'], w0, w0 + wd)); prev_rush = r['chemin']; pos = (ordre_rushs.index(r['chemin']), w0 + wd)
         mode = mode_cadrage(r, W, H, cadrage)
         # recadrage vers le sujet (format différent) : centre horizontal du sujet à ce moment
@@ -155,12 +172,12 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
         zmax = ZOOM_MAX.get(zooms_mode, 0.08)
         clip = dict(src=r['chemin'], nom=r['nom'], role='B', src_in=round(w0, 3), src_out=round(w0 + wd, 3), t0=t0, t1=t1, mots=[],
                     zoom=round(1 + min(0.12, zmax) * niveau, 3), case=c['n'], cadrage=mode, centre_x_pct=cx, note=round(s, 2), pourquoi=why)
-        if vit < 1: clip['vitesse'] = vit
+        if abs(vit - 1) > 1e-3: clip['vitesse'] = vit
         if ent.get('type') in TRANS_OK:
             fr = int(ent.get('images') or (2 if ent['type'] == 'flash blanc' else 8))
             clip['transition_entree'] = dict(type=ent['type'], images=fr)
             transitions.append(dict(plan=len(clips), t=t0, type=ent['type'], images=fr, direction=ent.get('direction') or 'vers la gauche'))
-        a_faire = []                                                # ce que le moteur de rendu n'applique pas encore tout seul (étape 4)
+        a_faire = list(c.get('a_faire_script') or [])               # ce que le moteur de rendu n'applique pas encore tout seul (étape 4)
         if ent.get('type') and ent['type'] not in TRANS_OK and ent['type'] not in RECADRAGE + ('coupe sèche',): a_faire.append(ent['type'])
         for m in c['masques']: a_faire.append(m['type'])
         if c.get('vitesse'): clip['velocity'] = c['vitesse']; a_faire.append('rampe de vitesse (velocity) ' + (c['vitesse'].get('forme') or ''))
@@ -185,7 +202,7 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
                                  centre_pct=o.get('centre_pct') or [50, 40], entree=o.get('entree') or 'pop avec rebond', texte=o.get('texte')))
             elif o['type'] not in ('barre de progression',): clip.setdefault('a_faire', []).append(o['type'])
         for tx in c['textes']:
-            nouveau = textes.pop(0) if textes else None
+            nouveau = tx['texte_original'] if tx.get('notre') else (textes.pop(0) if textes else None)
             tt0 = round(t0 + tx['debut_rel_s'] * k, 3)
             o = dict(type='texte animé', t0=tt0, t1=round(min(tt0 + max(0.4, tx['duree_s'] * k), t1 + 2 * d), 3),
                      centre_pct=[tx['position'][0] or 50, tx['position'][1] or 40], entree=tx.get('animation') or 'apparition sèche',
@@ -199,7 +216,7 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
             nom = DEPUIS_ANALYSE.get(sx['type'])
             if nom: effets.append(dict(t=round(max(0, t0 + sx['debut_rel_s'] * k), 3), type=nom, fichier=f'sfx/{nom}.wav'))
         rapport.append(dict(case=c['n'], t0=t0, t1=t1, rush=r['nom'], de=clip['src_in'], a=clip['src_out'], note=round(s, 2), ok=why.get('ok', []),
-                            manque=why.get('manque', []), besoin=besoin, role=c['role'], vitesse=vit, a_faire=clip.get('a_faire', [])))
+                            manque=why.get('manque', []), besoin={kk: v for kk, v in besoin.items() if not kk.startswith('_')}, role=c['role'], vitesse=vit, a_faire=clip.get('a_faire', [])))
         clips.append(clip)
     duree = clips[-1]['t1'] if clips else 0
     musd = None
@@ -207,7 +224,7 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
         musd = dict(src=os.path.abspath(musique), nom=os.path.basename(musique), src_in=debut_mus, tempo_bpm=M.get('tempo_bpm'),
                     temps_s=[round(x - debut_mus, 3) for x in M.get('temps_s', []) if debut_mus <= x < debut_mus + duree],
                     drops_s=[round(x['t'] - debut_mus, 3) for x in M.get('drops', []) if debut_mus <= x['t'] < debut_mus + duree],
-                    niveau_db=0.0, baisse_sous_voix_db=0.0, passages_voix=[])
+                    niveau_db=0.0, baisse_sous_voix_db=0.0, passages_voix=[], fondu_fin_s=0.15)
     if T.get('barre_de_progression'): incr.append(dict(type='barre de progression', position='haut', couleur='#ff2d2d'))
     img = R.get('image') or {}
     etal = None
@@ -241,7 +258,7 @@ def ecrire_rapport(plan, T, path):
         for x in manque:
             b = x['besoin']
             L.append(f"- **case {x['case']}** ({x['t1'] - x['t0']:.1f} s, {x['role'] or 'sans rôle particulier'}) : "
-                     + ', '.join(str(v) for v in (b.get('cadrage'), b.get('geste'), b.get('expression'), f"mouvement {b['mouvement']}" if b.get('mouvement') else None) if v)
+                     + ', '.join(str(v) for v in (f"« {b['requete']} »" if b.get('requete') else None, b.get('cadrage'), b.get('geste'), b.get('expression'), f"mouvement {b['mouvement']}" if b.get('mouvement') else None) if v)
                      + (f" — il manque : {', '.join(x['manque'])}" if x['manque'] else ''))
     tx = plan.get('textes_a_remplacer') or []
     if tx:

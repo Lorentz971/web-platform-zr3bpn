@@ -175,6 +175,7 @@ export const PatternMontage: React.FC = () => {
       const k = Math.min(1, Math.max(0, Math.min((t - a + 0.15) / 0.15, (b + 0.15 - t) / 0.15)));
       v = Math.min(v, base + (bas - base) * k);
     }
+    if (m.fondu_fin_s) v *= Math.min(1, Math.max(0, (D.duree_s - t) / m.fondu_fin_s));   // petit fondu final : pas de clic
     return v;
   };
   return (

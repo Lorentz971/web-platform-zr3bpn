@@ -35,6 +35,7 @@ def main():
     ap.add_argument('--zooms', choices=['doux', 'garder', 'aucun'], default='doux', help="zooms de l'original : doux (par défaut), garder, aucun")
     ap.add_argument('--melange', choices=['libre', 'ordre', 'un'], default='libre', help="libre : le meilleur rush par case ; ordre : on avance dans nos rushs dans l'ordre ; un : un seul rush")
     ap.add_argument('--node-modules'); ap.add_argument('--navigateur')
+    ap.add_argument('--sons', help='dossier de nos effets sonores (whoosh, impacts…) à la place des sons fabriqués')
     a = ap.parse_args()
     if a.chercher:
         rushs = ([a.pattern] if a.pattern else []) + a.rushs
@@ -58,13 +59,15 @@ def main():
     if M: print(f"Notre musique : {M.get('tempo_bpm')} BPM, {len(M.get('temps_s', []))} temps, drops à {[d['t'] for d in M.get('drops', [])]}")
     textes = [t.strip() for t in a.textes.split('|')] if a.textes else None
     from appliquer_pattern import exporter
+    from montage import sons as sons_mod
+    S = sons_mod.classer(a.sons) if a.sons else None
     plans = []
     for g in range(max(1, a.variantes)):
         print(f'\nVariante {g} :')
         plan = rp.remplir(T, P, B, musique=a.musique, M=M, textes=textes, graine=g, duree_max=a.duree, format_=a.format,
                          cadrage=a.cadrage, zooms_mode=a.zooms, melange=a.melange)
         d = os.path.join(out, f'variante-{g}')
-        exporter(plan, d, a.pattern, rendu=a.rendu, navigateur=a.navigateur, node_modules=a.node_modules)
+        exporter(plan, d, a.pattern, rendu=a.rendu, navigateur=a.navigateur, node_modules=a.node_modules, sons=S)
         rp.ecrire_rapport(plan, T, os.path.join(d, 'remplissage.md'))
         plans.append(plan)
     if len(plans) > 1: rp.comparer_variantes(plans, os.path.join(out, 'variantes.md'))
