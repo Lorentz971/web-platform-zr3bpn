@@ -24,7 +24,7 @@ Pour récupérer une vidéo YouTube ou TikTok : `yt-dlp -f "bv*+ba/b" -o video.m
 | **Caméra** | Punch-in, dézoom, poussée et recul lents (%, durée, courbe d'accélération, rebond, point visé, progression image par image), panoramiques, rotations, tremblements (amplitude, fréquence) |
 | **Vitesse** | « Velocity » des edits (l'image arrive vite, ralentit fortement, repart : profil image par image), ralenti, accéléré, accélération / décélération progressive (speed ramp), marche arrière, arrêt sur image |
 | **Incrustations** | Sticker / émoji, flèche ou forme, bandeau (lower third), encart, texte animé, image dans l'image, écran partagé, barre de progression — position, taille, animation d'entrée et de sortie |
-| **Masques / compositing** | Sujet détouré devant un fond qui change (position et taille du sujet), silhouette remplie d'une couleur, texte placé derrière le sujet |
+| **Masques / compositing** | Sujet détouré devant un fond qui change (position et taille du sujet), silhouette du sujet remplie de blanc ou de noir, collage de panneaux qui se posent (nombre, inclinaison), texte placé derrière le sujet (relu en entier malgré la partie cachée) |
 | **Textes** | Lecture des polices stylisées (RapidOCR + Tesseract) ; tri automatique sous-titres / filigranes (logo TikTok, @compte, signature du monteur) / textes filmés (logos de sponsors, panneaux : liste `montage/marques.txt` à compléter) ; sous-titres lus (anglais et français) : moment, mots par sous-titre, position, taille, majuscules, contour noir, mot surligné et sa couleur, animation (pop, pop avec rebond, mot par mot, agrandissement) ; titres et textes d'interface |
 | **Image** | Par plan : luminosité, contraste, saturation, teinte, température, teinte des ombres et des hautes lumières (étalonnage), vignettage, grain, bandes noires ; visage (taille, position, espace au-dessus, règle des tiers) |
 | **Son** | Volume (LUFS), voix transcrite mot par mot avec les temps (25 langues), pauses, débit (mots/min), temps de parole, tempo, coupes sur le temps, musique baissée sous la voix (dB), coupures de musique avant une révélation, effets sonores classés (whoosh, pop, clic, ding, impact, montée, glitch, déclencheur photo, clavier) et l'événement image sur lequel ils tombent, coupes pendant les pauses ou sur la parole |
@@ -92,13 +92,13 @@ modèles, l'outil marche quand même mais estime la voix au lieu de la transcrir
 | Edit | Ce que l'outil a trouvé |
 |---|---|
 | Edit Verstappen carré (22 s) | 27 plans, rythme lent puis rapide, velocity sur chaque plan rapide, 2 flashs + fondu au noir, sous-titres « DAMN » / « I CANT MOVE MY BODY » / « SWITCH », filigranes TikTok et @compte écartés, logos de sponsors écartés |
-| Edit Verstappen avec masques (22 s) | Max détouré devant des fonds qui défilent (2,8–4,4 s et 11,2–12 s), texte « SIMPLY LOVELY » placé derrière lui, flashs, velocity |
+| Edit Verstappen avec masques (22 s) | Max détouré devant des fonds qui défilent (2,8–4,4 s et 11,2–12 s), silhouettes blanches (9,4 s, 13,3 s, 15,1 s), collages de panneaux penchés (10,8 s, 14,6 s, 16,7 s, 18,3 s), texte « SIMPL(Y L)OVELY » derrière lui, flashs, velocity |
 | Edit « THIS IS F1 » (23 s) | feux de départ avec logos incrustés, textes cinétiques « THIS » / « IS », glitchs, panoramiques filés, velocity, écran de fin |
 
 ## Les limites (à garder en tête)
 
 - **Logos sur un sujet immobile** : un sponsor sur une combinaison qui ne bouge pas peut encore passer pour un texte ; ajoutez la marque dans `montage/marques.txt`.
-- **Masques non encore reconnus** : collage de panneaux, texte qui passe derrière un sujet sans changement de fond, sujet qui sort du cadre, clones.
+- **Masques non encore reconnus** : texte qui passe derrière un sujet sans changement de fond, sujet qui sort du cadre, clones ; un panneau blanc derrière un sujet peut être pris pour une silhouette.
 
 - **Grain fin** : effacé par la compression des plateformes, il n'est plus mesurable (seul point faux du test n° 2).
 - **Effets sonores sous la voix** : un bruit de clavier pendant qu'on parle n'est pas toujours repéré.

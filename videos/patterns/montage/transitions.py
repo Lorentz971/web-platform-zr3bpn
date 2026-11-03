@@ -56,6 +56,79 @@ def _sujet_detoure(S, k):
     return None
 
 
+def _silhouette(S, k):
+    """À une coupe : une grande forme unie (blanche ou noire) au contour irrégulier apparaît d'un coup = la silhouette
+    du sujet remplie d'une couleur (effet de masque très courant dans les edits)."""
+    G, AW, AH = S['grays'], S['AW'], S['AH']
+    g = G[k]; d = np.abs(g.astype(np.int16) - G[k - 1])
+    lap = np.abs(cv2.Laplacian(g, cv2.CV_32F)) < 4
+    for couleur, m in (('blanche', lap & (g > 200)), ('noire', lap & (g < 35))):
+        m = cv2.morphologyEx(m.astype(np.uint8), cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+        n, lab, st, _ = cv2.connectedComponentsWithStats(m)
+        for i in range(1, n):
+            x, y, w, h, ar = st[i]; frac = ar / (AW * AH)
+            if not (0.08 < frac < 0.6): continue
+            if ar / (w * h) > 0.75: continue                       # rectangle ou fond plein : pas une silhouette
+            if x <= 1 and y <= 1 and x + w >= AW - 1: continue      # bande pleine largeur en haut (ciel)
+            comp = lab == i
+            if (d[comp] > 40).mean() < 0.5: continue                # elle vient d'apparaître
+            cnt, _ = cv2.findContours(comp.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            c = max(cnt, key=cv2.contourArea)
+            if cv2.contourArea(c) / (cv2.contourArea(cv2.convexHull(c)) + 1e-6) > 0.97: continue   # forme géométrique simple
+            # un aplat parfaitement uni au bord net (masque) ; une zone surexposée ou un ciel blanc ont du grain et un bord flou
+            inner = cv2.erode(comp.astype(np.uint8), np.ones((7, 7), np.uint8)) > 0
+            bord = (cv2.dilate(comp.astype(np.uint8), np.ones((3, 3), np.uint8)) > 0) & ~(cv2.erode(comp.astype(np.uint8), np.ones((3, 3), np.uint8)) > 0)
+            gm = np.hypot(cv2.Sobel(g, cv2.CV_32F, 1, 0), cv2.Sobel(g, cv2.CV_32F, 0, 1))
+            if not inner.any() or g[inner].std() > 1.0 or gm[bord].mean() < 30: continue
+            return dict(sujet_centre_pct=[round((x + w / 2) / AW * 100), round((y + h / 2) / AH * 100)], sujet_taille_pct_ecran=round(frac * 100, 1),
+                        sujet_boite_pct=[round(x / AW * 100), round(y / AH * 100), round(w / AW * 100), round(h / AH * 100)], silhouette=True, couleur=couleur)
+    return None
+
+
+def collages(S, events=()):
+    """Collage / mosaïque : des panneaux rectangulaires (droits ou un peu penchés) viennent se poser sur l'image
+    l'un après l'autre. À chaque arrivée, seule une zone en forme de quadrilatère change, le reste ne bouge pas."""
+    G, NF, FPS, AW, AH = S['grays'], S['NF'], S['FPS'], S['AW'], S['AH']
+    # pendant une séquence « sujet détouré, fond qui défile », les fonds qui changent ne sont pas des panneaux
+    tdet = sorted(round(e['start_s'] * FPS) for e in events if e.get('sujet_boite_pct') and not e.get('silhouette'))
+    masque = set()
+    for i, k in enumerate(tdet):
+        masque |= set(range(k - 3, k + 4))
+        if i + 1 < len(tdet) and tdet[i + 1] - k <= FPS: masque |= set(range(k, tdet[i + 1] + 1))
+    poses = []
+    for k in range(1, NF):
+        if k in masque: continue
+        d = np.abs(G[k].astype(np.int16) - G[k - 1])
+        if (d < 12).mean() < 0.35 or (d > 40).mean() < 0.05: continue    # une partie de l'image reste en place, une autre change
+        e1 = cv2.Canny(G[k], 60, 160); e0 = cv2.dilate(cv2.Canny(G[k - 1], 60, 160), np.ones((5, 5), np.uint8))
+        neuf = ((e1 > 0) & (e0 == 0)).astype(np.uint8) * 255      # bords qui viennent d'apparaître
+        L = cv2.HoughLinesP(neuf, 1, np.pi / 180, 60, minLineLength=int(0.22 * min(AW, AH)), maxLineGap=6)
+        if L is None: continue
+        ang = [math.degrees(math.atan2(y2 - y1, x2 - x1)) % 180 for x1, y1, x2, y2 in L[:, 0]]
+        hz = [a for a in ang if a < 20 or a > 160]; vt = [a for a in ang if 70 < a < 110]
+        dif = lambda a, b: min(abs(a - b), 180 - abs(a - b))
+        deux_sens = any(dif(a, b) > 30 for a in ang for b in ang)            # un panneau a des bords dans deux directions (un texte, non)
+        if len(ang) < 3 or not deux_sens: continue
+        pts = L[:, 0].reshape(-1, 2); x0, y0 = pts.min(0); x1, y1 = pts.max(0)
+        if x1 - x0 > 0.95 * AW and y1 - y0 > 0.9 * AH: continue            # toute l'image : un changement de plan
+        incl = np.median([((a + 90) % 180) - 90 if a > 90 else a for a in hz]) if hz else 0.0
+        poses.append(dict(f=k, centre_pct=[round((x0 + x1) / 2 / AW * 100), round((y0 + y1) / 2 / AH * 100)],
+                          taille_pct_ecran=round((x1 - x0) * (y1 - y0) / (AW * AH) * 100, 1), angle=round(float(incl), 1)))
+    out = []
+    for p in poses:                                              # panneaux à moins d'une seconde d'écart = un même collage
+        if out and p['f'] - out[-1]['_fin'] <= FPS:
+            out[-1]['panneaux'].append(p); out[-1]['_fin'] = p['f']
+        else:
+            out.append(dict(_debut=p['f'], _fin=p['f'], panneaux=[p]))
+    res = []
+    for o in out:
+        if len(o['panneaux']) < 2: continue
+        res.append(dict(type='collage (panneaux qui se posent)', start_s=round(o['_debut'] / FPS, 2), end_s=round(o['_fin'] / FPS + 0.3, 2),
+                        nombre_de_panneaux=len(o['panneaux']), penches=any(abs(p['angle']) > 1.5 for p in o['panneaux']),
+                        panneaux=[{k: v for k, v in p.items() if k != 'f'} | dict(t=round(p['f'] / FPS, 2)) for p in o['panneaux']]))
+    return res
+
+
 def detect(S):
     rows, grays, NF, FPS, W0, AW, AH = S['rows'], S['grays'], S['NF'], S['FPS'], S['W0'], S['AW'], S['AH']
     T = lambda f: round(f / FPS, 2)
@@ -218,7 +291,7 @@ def detect(S):
     orb = cv2.ORB_create(1500)
     for k in np.nonzero(brk & ~used)[0]:
         kind, extra = 'coupe sèche', {}
-        det = _sujet_detoure(S, k)
+        det = _silhouette(S, k) or _sujet_detoure(S, k)
         if det:                                                  # le sujet reste, le fond change : masque / détourage
             kind, extra = ('silhouette (sujet rempli d\'une couleur)' if det.get('silhouette') else 'changement de fond (sujet détouré)'), det
         elif k in reframe:

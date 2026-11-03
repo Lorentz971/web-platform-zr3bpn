@@ -186,7 +186,7 @@ def _trier(S, out, events=None):
         marques = []
     def marque(t):
         mots = [norm(m) for m in t.split()] + [norm(t)]
-        return any(len(m) >= 3 and (SequenceMatcher(None, m, b).ratio() > 0.75 or (len(b) >= 4 and b in m)) for m in mots for b in marques if b)
+        return any(len(m) >= 3 and (SequenceMatcher(None, m, b).ratio() > 0.75 or (len(b) >= 4 and b in m) or (len(m) >= 4 and len(b) >= 6 and b.startswith(m[:4]))) for m in mots for b in marques if b)
     garde2 = []
     for o in garde:
         if marque(o['text']): scene.append(o); continue
@@ -209,3 +209,15 @@ def _trier(S, out, events=None):
     garde2 = fus
     resume = lambda L: sorted({o['text'] for o in L})[:60]
     return garde2, dict(filigranes=resume(fil), scene=resume(scene))
+
+
+def est_marque(t):
+    """Le texte est-il une marque de la liste marques.txt (sponsor filmé) ?"""
+    from difflib import SequenceMatcher
+    norm = lambda x: ''.join(ch for ch in x.upper() if ch.isalnum())
+    try:
+        marques = [norm(l) for l in open(os.path.join(os.path.dirname(__file__), 'marques.txt'), encoding='utf-8') if l.strip() and not l.startswith('#')]
+    except OSError:
+        return False
+    mots = [norm(m) for m in t.split()] + [norm(t)]
+    return any(len(m) >= 3 and (SequenceMatcher(None, m, b).ratio() > 0.75 or (len(b) >= 4 and b in m) or (len(m) >= 4 and len(b) >= 6 and b.startswith(m[:4]))) for m in mots for b in marques if b)

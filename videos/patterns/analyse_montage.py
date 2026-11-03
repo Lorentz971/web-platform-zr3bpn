@@ -46,12 +46,40 @@ def analyse(video, out='.', quiet=False, cache=None):
             if r == 'logo': L.remove(c); logos_sujet.append(c['text'])
             elif r == 'derriere': c['derriere_le_sujet'] = True          # texte placé entre le fond et le sujet (masque)
     if logos_sujet: capt_sum['textes_de_la_scene'] = sorted(set((capt_sum.get('textes_de_la_scene') or []) + logos_sujet))
+    # texte derrière le sujet : le sujet en cache une partie, on relit plus souvent et on garde la lecture la plus complète
+    if video_pass.HAS_RAPID:
+        import cv2
+        norm = lambda t: ''.join(ch for ch in t.upper() if ch.isalnum())
+        for L in (capt, others):
+            der = sorted([c for c in L if c.get('derriere_le_sujet')], key=lambda c: c['start_s'])
+            groupes = []
+            for c in der:
+                if groupes and c['start_s'] - (groupes[-1][-1]['start_s'] + groupes[-1][-1]['dur_s']) < 1.5 and abs(c['centre_y_pct'] - groupes[-1][-1]['centre_y_pct']) < 8:
+                    groupes[-1].append(c)
+                else: groupes.append([c])
+            cap_ = cv2.VideoCapture(video)
+            for g in groupes:
+                a_, b_ = round(g[0]['start_s'] * FPS), round((g[-1]['start_s'] + g[-1]['dur_s']) * FPS)
+                yc = np.mean([c['centre_y_pct'] for c in g]) / 100 * H0; best = max((c['text'] for c in g), key=lambda t: len(norm(t)))
+                for f_ in range(a_, b_ + 1, 3):
+                    cap_.set(cv2.CAP_PROP_POS_FRAMES, f_); ok, fr = cap_.read()
+                    if not ok: break
+                    res_ = video_pass._rapid()(fr)[0] or []
+                    # morceaux de la ligne (le sujet coupe le texte en plusieurs bouts), sans les logos
+                    bouts = sorted([(min(p[0] for p in r[0]), r[1].strip()) for r in res_ if float(r[2]) > 0.5
+                                    and abs((min(p[1] for p in r[0]) + max(p[1] for p in r[0])) / 2 - yc) < 0.06 * H0 and not text.est_marque(r[1])])
+                    connus = [norm(c['text']) for c in g if len(norm(c['text'])) >= 3]
+                    proche = lambda x: any(any(k[i:i + 3] in norm(x) for i in range(len(k) - 2)) for k in connus)
+                    t_ = ' '.join(b[1] for b in bouts if proche(b[1]) and 'TIKTOK' not in norm(b[1]))
+                    if len(norm(t_)) > len(norm(best)) and any(len(norm(c['text'])) >= 3 and norm(c['text'])[:4] in norm(t_) for c in g): best = t_
+                g[0].update(text=best, mots=len(best.split()), dur_s=round((b_ - a_) / FPS, 2))
+                for c in g[1:]: L.remove(c)
     by_f = {}
     for c in S['cap_samples']:
         st_ = max(3, S.get('OCR_STEP', 3))
         for q in range(c['f'] - st_, c['f'] + st_ + 1): by_f.setdefault(q, []).append(tuple(c['box']))
     cap_box = lambda k: by_f.get(k, [])                     # seulement les textes confirmés par l'OCR
-    ovl = overlays.progress_bar(S) + overlays.split_and_pip(S, shots)
+    ovl = overlays.progress_bar(S) + overlays.split_and_pip(S, shots) + transitions.collages(S, events)
     cap_txt = [(c['text'], c['start_s']) for c in capt]
     ovl += [o for o in overlays.appearing(S, shots, cap_box, events)          # un sous-titre qui « pop » n'est pas une incrustation
             if not (o.get('texte') and any(o['texte'] == t and abs(o['start_s'] - t0) < 0.6 for t, t0 in cap_txt))
