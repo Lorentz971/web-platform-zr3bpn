@@ -9,7 +9,7 @@ import os, sys, time
 from difflib import SequenceMatcher
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from montage import video_pass, transitions, motion, overlays, text, look, audio, structure, report, musique, roles, contenu
+from montage import video_pass, transitions, motion, overlays, text, look, audio, structure, report, musique, roles, contenu, effets
 
 
 def analyse(video, out='.', quiet=False, cache=None):
@@ -147,6 +147,8 @@ def analyse(video, out='.', quiet=False, cache=None):
         nc = float(cv2.matchTemplate(a_, b_, cv2.TM_CCOEFF_NORMED)[0][0])
         if nc > 0.75: P['boucle'] = f"la dernière image ressemble à la première ({round(nc * 100)} %) : la vidéo boucle, on la revoit sans s'en rendre compte"
         elif fin < NF - 0.7 * FPS: P['boucle'] = f"pas de boucle : la vidéo se termine au noir ({round((NF - fin) / FPS, 1)} s) sur la signature ou la fin"
+    log('Effets d\'image (glow, couleurs, stroboscope, miroir…)…')
+    P['effets_image'] = effets.detect(S, events)
     roles.annoter(P, M)
     report.write(P, S, out, beat_t)
     report.planche(P, S, out)

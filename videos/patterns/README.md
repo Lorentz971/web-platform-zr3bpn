@@ -24,6 +24,7 @@ Pour récupérer une vidéo YouTube ou TikTok : `yt-dlp -f "bv*+ba/b" -o video.m
 | **Caméra** | Punch-in, dézoom, poussée et recul lents (%, durée, courbe d'accélération, rebond, point visé, progression image par image), panoramiques, rotations, tremblements (amplitude, fréquence) |
 | **Vitesse** | « Velocity » des edits (l'image arrive vite, ralentit fortement, repart : profil image par image), ralenti, accéléré, accélération / décélération progressive (speed ramp), marche arrière, arrêt sur image |
 | **Incrustations** | Sticker / émoji, flèche ou forme, bandeau (lower third), encart, texte animé, image dans l'image, écran partagé, barre de progression — position, taille, animation d'entrée et de sortie |
+| **Effets d'image** | Glow / halo, néon, fuite de lumière, noir et blanc, négatif, teinte unique, bichromie, aberration chromatique, flou qui s'ouvre, stroboscope, saccade (images répétées), miroir, bandes noires qui se ferment ou s'ouvrent ; ce qui couvre presque toute la vidéo est rangé en « style global » (étalonnage, décor) |
 | **Masques / compositing** | Sujet détouré devant un fond qui change (position et taille du sujet), silhouette du sujet remplie de blanc ou de noir, collage de panneaux qui se posent (nombre, inclinaison), texte placé derrière le sujet (relu en entier malgré la partie cachée) |
 | **Textes** | Lecture des polices stylisées (RapidOCR + Tesseract) ; tri automatique sous-titres / filigranes (logo TikTok, @compte, signature du monteur) / textes filmés (logos de sponsors, panneaux : liste `montage/marques.txt` à compléter) ; sous-titres lus (anglais et français) : moment, mots par sous-titre, position, taille, majuscules, contour noir, mot surligné et sa couleur, animation (pop, pop avec rebond, mot par mot, agrandissement) ; titres et textes d'interface |
 | **Image** | Par plan : luminosité, contraste, saturation, teinte, température, teinte des ombres et des hautes lumières (étalonnage), vignettage, grain, bandes noires ; visage (taille, position, espace au-dessus, règle des tiers) |
@@ -100,6 +101,7 @@ modèles, l'outil marche quand même mais estime la voix au lieu de la transcrir
 |---|---|---|
 | `video-test-complete.py` → `verifier.py` | 24 s horizontale : coupes sur le temps, fondu, flash, glissement, tremblement, punch-in, poussée, rotation, ralenti, arrêt sur image, sous-titres, visage, couleurs, voix, musique, effets | **23 / 23** |
 | `video-test-v2.py` → `verifier_v2.py` | 40 s verticale : coupe avec recadrage, panoramique filé, glitch, zoom de transition, rideau, rotation, flash, speed ramp, marche arrière, sticker, flèche, bandeau, émoji, image dans l'image, écran partagé, barre de progression, sous-titres pop / mot par mot, carton de texte, capture d'écran, étalonnage, bandes noires, voix transcrite, 26 effets sonores | **41 / 42** (`verification_v2.md`) |
+| `video-test-effets.py` → `verifier_effets.py` | 34 s : les 13 effets d'image, chacun à un moment connu | **14 / 14** (aucune fausse détection) |
 | `video-test-musique.py` → `verifier_musique.py` | musique à 128 BPM : intro étouffée, drop à l'ouverture du filtre, silence puis drop | **5 / 5** |
 | La même vidéo n° 2, abîmée | très compressée / caméra à la main / bruit et flou | **36 / 32 / 27 sur 42** (détail dans `verification_v2.md`) |
 | `video-test-rushs.py` | Faux rushs (face caméra + 2 illustrations + musique) pour tester `appliquer_pattern.py --rendu` de bout en bout | conformité de notre montage au pattern : **58 à 61 %** (`conformite-exemple.md`) ; rythme, coupes, débit, sous-titres, barre de progression justes |
@@ -114,6 +116,7 @@ modèles, l'outil marche quand même mais estime la voix au lieu de la transcrir
 
 ## Les limites (à garder en tête)
 
+- **Glow et néon sur de vraies vidéos** : une lumière du décor (lampes, salle de sport éclairée) peut encore être prise pour un effet ; ces détections sont marquées « confiance basse ».
 - **Logos sur un sujet immobile** : un sponsor sur une combinaison qui ne bouge pas peut encore passer pour un texte ; ajoutez la marque dans `montage/marques.txt`.
 - **Masques non encore reconnus** : texte qui passe derrière un sujet sans changement de fond, sujet qui sort du cadre, clones ; un panneau blanc derrière un sujet peut être pris pour une silhouette.
 

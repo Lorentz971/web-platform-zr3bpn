@@ -36,6 +36,9 @@ def annoter(P, M):
         m['role'] = _fonction(m['type'], m['start_s'], M, {}); m['confiance'] = CONF.get(m['type'], 0.7)
     for o in P['incrustations']:
         o['role'] = _fonction(o['type'], o['start_s'], M, {}); o['confiance'] = CONF.get(o['type'], 0.6)
+    for x in P.get('effets_image', []):
+        x['role'] = _fonction(x['type'].replace('style global : ', ''), x['start_s'], M, {})
+        x['confiance'] = 0.45 if any(k in x['type'] for k in ('glow', 'néon', 'fuite')) else 0.65    # glow / néon : à vérifier à l'œil
     for c in P.get('sous_titres', []) + P.get('textes_a_l_ecran', []):
         ph = next((p['text'] for p in phrases if p['start_s'] - 0.5 <= c['start_s'] <= p['end_s'] + 0.3), None)
         typ = 'texte derrière le sujet' if c.get('derriere_le_sujet') else 'sous-titre'
@@ -57,7 +60,7 @@ def lecture(P, M):
         tr = [e for e in P['transitions'] if a <= e['start_s'] < b]
         n_coupes = sum(e['type'] in hard for e in tr)
         eff = {}
-        for e in tr + [m for m in P['mouvements'] if a <= m['start_s'] < b] + [o for o in P['incrustations'] if a <= o['start_s'] < b and o['type'] != 'barre de progression']:
+        for e in tr + [m for m in P['mouvements'] if a <= m['start_s'] < b] + [o for o in P['incrustations'] if a <= o['start_s'] < b and o['type'] != 'barre de progression'] + [x for x in P.get('effets_image', []) if a <= x['start_s'] < b]:
             if e['type'] in hard: continue
             eff[e['type']] = eff.get(e['type'], 0) + 1
         txt = [c['text'] for c in P.get('sous_titres', []) + P.get('textes_a_l_ecran', []) if a <= c['start_s'] < b]

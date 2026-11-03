@@ -61,7 +61,8 @@ def write(P, S, OUT, beat_t):
               '- Parties : ' + ' · '.join(f"{p['de_s']}–{p['a_s']} s {p['nom']}" for p in M.get('parties', [])), '']
     hard = ('coupe sèche', 'jump cut')
     elems = [(e['start_s'], e['type'], e) for e in P['transitions'] if e['type'] not in hard] + [(m['start_s'], m['type'], m) for m in P['mouvements']] + \
-            [(o['start_s'], o['type'], o) for o in P['incrustations']] + [(c['start_s'], f"texte « {c['text']} »", c) for c in P['sous_titres'] + P['textes_a_l_ecran']]
+            [(o['start_s'], o['type'], o) for o in P['incrustations']] + [(x['start_s'], x['type'], x) for x in P.get('effets_image', [])] + \
+            [(c['start_s'], f"texte « {c['text']} »", c) for c in P['sous_titres'] + P['textes_a_l_ecran']]
     elems = [x for x in sorted(elems, key=lambda x: x[0]) if x[2].get('role')]
     if elems:
         table("Rôle de chaque élément", elems, [('Temps', lambda x: f"{x[0]} s"), ('Élément', lambda x: x[1]), ('Partie de la musique', lambda x: x[2]['role'].get('partie_musicale') or ''),
