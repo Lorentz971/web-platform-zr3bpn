@@ -112,8 +112,30 @@ def analyse(y, sr=22050, voix=None):
         elif b > tt[-1] - 0.5 and pente < -1.5: nom = 'outro'
         else: nom = 'refrain / partie forte' if e > ref - 5 else 'couplet / partie calme'
         parties.append(dict(de_s=float(a), a_s=float(b), nom=nom, energie_db=round(float(e - ref), 1)))
+    # cymbale inversée : un souffle aigu qui monte régulièrement puis s'arrête net (souvent juste avant un drop)
+    hi = _db(np.convolve(band(S, 5000, 11000), np.ones(4) / 4, 'same')); cymb = []
+    fps_ = sr / hop; k = 0
+    while k < len(hi) - 2:
+        j = k
+        while j + 1 < len(hi) and hi[j + 1] >= hi[j] - 0.6: j += 1
+        dur = (j - k) / fps_
+        if 0.4 <= dur <= 2.5 and hi[j] - hi[k] > 12 and j + 3 < len(hi) and hi[j] - hi[j + 1:j + 4].min() > 8:
+            if np.polyfit(np.arange(j - k + 1), hi[k:j + 1], 1)[0] * fps_ > 6:
+                cymb.append(dict(de_s=round(float(t[k]), 2), a_s=round(float(t[j]), 2), montee_db=round(float(hi[j] - hi[k]), 1)))
+            k = j + 1
+        else: k += 1
+    # version « slowed + reverb » : tempo lent et sons qui traînent longtemps après chaque coup
+    decs = []
+    for kt in kicks[:40]:
+        i0 = int(kt * fps_); seg_ = _db(S.sum(0)[i0:i0 + int(1.5 * fps_)] + 1e-12)
+        if len(seg_) > 5:
+            pk = seg_.max(); after = np.nonzero(seg_[np.argmax(seg_):] < pk - 20)[0]
+            decs.append((after[0] if len(after) else len(seg_)) / fps_)
+    decay = float(np.median(decs)) if decs else None
+    version = 'slowed + reverb (probable)' if decay and decay > 0.45 and tempo < 100 else None
     return dict(tempo_bpm=round(tempo), temps_s=[round(float(x), 3) for x in bt], premiers_temps_s=[round(float(x), 3) for x in down],
-                grosse_caisse_s=kicks, caisse_claire_s=snares, drops=drops, filtres=filtres, parties=parties)
+                grosse_caisse_s=kicks, caisse_claire_s=snares, drops=drops, filtres=filtres, parties=parties,
+                cymbales_inversees=cymb, traine_apres_les_coups_s=round(decay, 2) if decay else None, version=version)
 
 
 def lien(t, M, tol=0.07):

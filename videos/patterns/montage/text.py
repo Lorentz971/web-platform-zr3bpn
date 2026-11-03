@@ -169,7 +169,13 @@ def _trier(S, out, events=None):
         if t.startswith('@') or 'tiktok' in tl.replace(' ', '') or 'capcut' in tl or recurrent:
             fil.append(o); continue
         dep = [v for f in sorted({(o['_f0'] + o['_f1']) // 2, o['_f1']}) for v in _deplacement(S, o['_box'], f)]   # texte complet (pas pendant qu'il s'écrit)
-        if dep and np.median(dep) > 1.5: scene.append(o); scene_fort.append(o); continue   # il suit la caméra : texte filmé (logo, panneau)
+        if dep and np.median(dep) > 1.5:
+            # un texte qui bouge : logo filmé… sauf s'il est grand, n'est pas une marque, et apparaît en cours de plan (texte « tracké » sur le sujet)
+            f0_ = round(o['start_s'] * FPS)
+            en_cours = not any(0 <= f0_ - c <= step for c in coupes)
+            if o['hauteur_pct'] >= 3 and not est_marque(o['text']) and en_cours and sum(ch.isalnum() for ch in o['text']) >= 2:
+                o['suit_le_sujet'] = True; garde.append(o); continue
+            scene.append(o); scene_fort.append(o); continue   # il suit la caméra : texte filmé (logo, panneau)
         immobile = bool(dep) and np.median(dep) < 0.4                       # parfaitement fixe à l'écran (titre, bandeau) : incrusté
         if o['animation'] == 'apparition sèche' and cale_sur_le_plan(o) and not immobile: scene.append(o); continue   # un texte animé est forcément incrusté
         garde.append(o)

@@ -41,7 +41,7 @@ def annoter(P, M):
         x['confiance'] = 0.45 if any(k in x['type'] for k in ('glow', 'néon', 'fuite')) else 0.65    # glow / néon : à vérifier à l'œil
     for c in P.get('sous_titres', []) + P.get('textes_a_l_ecran', []):
         ph = next((p['text'] for p in phrases if p['start_s'] - 0.5 <= c['start_s'] <= p['end_s'] + 0.3), None)
-        typ = 'texte derrière le sujet' if c.get('derriere_le_sujet') else 'sous-titre'
+        typ = 'texte derrière le sujet' if c.get('derriere_le_sujet') else 'texte qui suit le sujet' if c.get('suit_le_sujet') else 'sous-titre'
         c['role'] = _fonction(typ, c['start_s'], M, dict(phrase=ph)); c['confiance'] = 0.6 if c.get('derriere_le_sujet') else 0.75
     for x in (P.get('son') or {}).get('effets_sonores', []):
         x['role'] = dict(lien_musique=mus.lien(x['t'], M), partie_musicale=mus.partie(x['t'], M),

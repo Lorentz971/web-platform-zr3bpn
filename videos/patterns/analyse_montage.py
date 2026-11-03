@@ -147,6 +147,10 @@ def analyse(video, out='.', quiet=False, cache=None):
         nc = float(cv2.matchTemplate(a_, b_, cv2.TM_CCOEFF_NORMED)[0][0])
         if nc > 0.75: P['boucle'] = f"la dernière image ressemble à la première ({round(nc * 100)} %) : la vidéo boucle, on la revoit sans s'en rendre compte"
         elif fin < NF - 0.7 * FPS: P['boucle'] = f"pas de boucle : la vidéo se termine au noir ({round((NF - fin) / FPS, 1)} s) sur la signature ou la fin"
+    for m_ in P['mouvements']:                               # tremblement calé sur la musique = shake ajouté au montage
+        if m_['type'] == 'tremblement' and M:
+            l_ = musique.lien(m_['start_s'], M)
+            m_['type'] = 'shake ajouté (sur le temps)' if l_ in ('sur le drop', 'sur le premier temps de la mesure', 'sur la grosse caisse', 'sur la caisse claire') and m_['dur_s'] <= 1.5 else 'tremblement (caméra à la main)'
     log('Effets d\'image (glow, couleurs, stroboscope, miroir…)…')
     P['effets_image'] = effets.detect(S, events)
     roles.annoter(P, M)

@@ -58,7 +58,9 @@ def write(P, S, OUT, beat_t):
         L += ['## Musique', f"- Tempo : {M.get('tempo_bpm')} BPM · {len(M.get('temps_s', []))} temps · {len(M.get('grosse_caisse_s', []))} coups de grosse caisse · {len(M.get('caisse_claire_s', []))} de caisse claire",
               '- Drops : ' + (', '.join(f"{d['t']} s (+{d['saut_graves_db']} dB de graves" + (', silence avant' if d['silence_avant'] else '') + ')' for d in M.get('drops', [])) or 'aucun'),
               '- Filtre étouffé : ' + (', '.join(f"{f['de_s']}–{f['a_s']} s (s'ouvre de {f['ouverture_db']} dB)" for f in M.get('filtres', [])) or 'aucun'),
-              '- Parties : ' + ' · '.join(f"{p['de_s']}–{p['a_s']} s {p['nom']}" for p in M.get('parties', [])), '']
+              '- Parties : ' + ' · '.join(f"{p['de_s']}–{p['a_s']} s {p['nom']}" for p in M.get('parties', [])),
+              '- Cymbales inversées (montée avant un temps fort) : ' + (', '.join(f"{c['de_s']}–{c['a_s']} s" for c in M.get('cymbales_inversees', [])) or 'aucune'),
+              '- Version : ' + (M.get('version') or 'normale') + (f" (les sons traînent {M['traine_apres_les_coups_s']} s après chaque coup)" if M.get('traine_apres_les_coups_s') else ''), '']
     hard = ('coupe sèche', 'jump cut')
     elems = [(e['start_s'], e['type'], e) for e in P['transitions'] if e['type'] not in hard] + [(m['start_s'], m['type'], m) for m in P['mouvements']] + \
             [(o['start_s'], o['type'], o) for o in P['incrustations']] + [(x['start_s'], x['type'], x) for x in P.get('effets_image', [])] + \

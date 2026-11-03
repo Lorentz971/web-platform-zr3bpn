@@ -39,10 +39,11 @@ def _mesures(video, NF):
                 if ring.any() and sat[ring].mean() > 90: neon = float(sat[ring].mean())
         lap = float(cv2.Laplacian(g, cv2.CV_32F).var())
         sym = float(np.corrcoef(g.ravel(), g[:, ::-1].ravel())[0, 1]) if g.std() > 3 else 0.0
+        symv = float(np.corrcoef(g.ravel(), g[::-1, :].ravel())[0, 1]) if g.std() > 3 else 0.0
         # fuite de lumière : un bord de l'image baigné d'une lumière chaude très douce (peu de détail, rouge-orangé)
         warm = ((hue < 25) | (hue > 165)) & (sat > 80) & (hsv[..., 2] > 170)
         bords = [warm[:, :W // 5].mean(), warm[:, -W // 5:].mean(), warm[:h // 5].mean(), warm[-h // 5:].mean()]
-        out.append(dict(sat=float(sat.mean()), luma=float(g.mean()), hist=hist, hd=hd, hc=hc, glow=glow, neon=neon, lap=lap, sym=sym,
+        out.append(dict(sat=float(sat.mean()), luma=float(g.mean()), hist=hist, hd=hd, hc=hc, glow=glow, neon=neon, lap=lap, sym=sym, symv=symv,
                         g=cv2.resize(g, (64, int(round(64 * h / W)))), fuite=float(max(bords))))
     return out
 
@@ -143,9 +144,12 @@ def detect(S, events=()):
             else:
                 out[-1]['end_s'] = T(k + int(FPS)); out[-1]['dur_s'] = round(out[-1]['end_s'] - out[-1]['start_s'], 2)
     # miroir : l'image devient symétrique gauche / droite (alors que d'habitude elle ne l'est pas)
-    sy = np.array([x['sym'] for x in m])
+    sy = np.array([x['sym'] for x in m]); sv = np.array([x['symv'] for x in m])
     if np.median(sy) < 0.7:
-        for a, b in runs(sy > 0.93):
+        kal = (sy > 0.9) & (sv > 0.9)                             # symétrique dans les deux sens : kaléidoscope
+        for a, b in runs(kal):
+            if b - a + 1 >= 4: ajoute('kaléidoscope', a, b)
+        for a, b in runs((sy > 0.93) & ~kal):
             if b - a + 1 >= 4: ajoute('effet miroir', a, b)
     # bandes noires qui se ferment ou s'ouvrent (effet cinéma)
     tb = np.array([r['top_bar'] for r in rows[:n]], float) / S['H0']
