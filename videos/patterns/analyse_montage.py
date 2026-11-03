@@ -28,6 +28,24 @@ def analyse(video, out='.', quiet=False, cache=None):
     shots = motion.make_shots(S, events, used)
     log('3/6 Incrustations, textes, mouvements…')
     capt, capt_sum, others = text.detect(S, events)
+    # masques : texte derrière un sujet détouré, ou logo porté par ce sujet
+    det = [e for e in events if e.get('sujet_boite_pct')]
+    def _dans_sujet(c):
+        for e in det:
+            if not (c['start_s'] - 1.5 <= e['start_s'] <= c['start_s'] + c['dur_s'] + 1.5): continue
+            bx, by, bw, bh = e['sujet_boite_pct']; cx, cy = c['centre_x_pct'], c['centre_y_pct']
+            if bx <= cx <= bx + bw and by <= cy <= by + bh:
+                # texte incrusté animé ou en partie caché (lecture partielle) = placé derrière le sujet ; sinon petit logo sur le sujet
+                if c.get('animation') not in (None, 'apparition sèche') or c.get('largeur_pct', 0) >= 0.6 * bw: return 'derriere'
+                return 'logo'
+        return None
+    logos_sujet = []
+    for L in (capt, others):
+        for c in list(L):
+            r = _dans_sujet(c)
+            if r == 'logo': L.remove(c); logos_sujet.append(c['text'])
+            elif r == 'derriere': c['derriere_le_sujet'] = True          # texte placé entre le fond et le sujet (masque)
+    if logos_sujet: capt_sum['textes_de_la_scene'] = sorted(set((capt_sum.get('textes_de_la_scene') or []) + logos_sujet))
     by_f = {}
     for c in S['cap_samples']:
         st_ = max(3, S.get('OCR_STEP', 3))

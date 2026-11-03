@@ -1,0 +1,96 @@
+# Marques et sponsors souvent filmés (combinaisons, maillots, panneaux) : jamais pris pour des sous-titres.
+# Une marque par ligne ; ajoutez les vôtres.
+Red Bull
+Oracle
+Mobil 1
+Mobil
+Visa
+Honda
+Claro
+Bybit
+Pirelli
+Ferrari
+Mercedes
+Petronas
+Aramco
+Shell
+DHL
+Rolex
+Heineken
+Emirates
+Qatar Airways
+Etihad
+Crypto.com
+Cash App
+Viaplay
+Tag Heuer
+Puma
+Nike
+Adidas
+Under Armour
+New Balance
+Jordan
+Gatorade
+Monster
+Coca-Cola
+Pepsi
+Spotify
+Jeep
+Fly Emirates
+Rakuten
+Santander
+AWS
+Lenovo
+Salesforce
+MSC
+Sparco
+Alpinestars
+Bell
+Arai
+Carlyle
+Gate
+Wings for Life
+Jumbo
+Infinitum
+Hard Rock
+Tezos
+Kraken
+Bitpanda
+Bwin
+Betway
+Unibet
+Stake
+Allianz
+Vodafone
+Samsung
+Sony
+EA Sports
+Playstation
+Xbox
+Intel
+Lavazza
+Peroni
+Moet
+Chandon
+Ford
+Racing
+Sport
+F1
+Formula 1
+TV
+ESPN
+Sky Sports
+Canal+
+beIN
+UFC
+NBA
+NFL
+NHL
+MLB
+Premier League
+Champions League
+La Liga
+Ligue 1
+Serie A
+Bundesliga
+Wings

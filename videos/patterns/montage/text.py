@@ -1,4 +1,5 @@
 """Sous-titres et textes à l'écran : texte, moments, position, taille, style, mot surligné, animation."""
+import os
 import numpy as np, cv2
 
 
@@ -76,7 +77,7 @@ def detect(S, events=None):
         x, y, w, h = e['box']
         out.append(dict(text=e['text'], start_s=T(f0), dur_s=round((e['last'] + step - f0) / FPS, 2), mots=e['words'], animation=anim,
                         mot_surligne=e['hi'], couleur_surlignage=e['hic'], majuscules=bool(np.mean(e['caps']) > 0.5), contour_noir=bool(np.mean(e['outline']) > 0.5),
-                        centre_x_pct=round((x + w / 2) / W0 * 100), centre_y_pct=round((y + h / 2) / H0 * 100), hauteur_pct=round(h / H0 * 100, 1),
+                        centre_x_pct=round((x + w / 2) / W0 * 100), centre_y_pct=round((y + h / 2) / H0 * 100), hauteur_pct=round(h / H0 * 100, 1), largeur_pct=round(w / W0 * 100, 1),
                         _box=e['box'], _f0=e['first'], _f1=e['last']))
     out = [o for o in out if o['dur_s'] >= 0.15]
     out, exclus = _trier(S, out, events)
@@ -179,8 +180,16 @@ def _trier(S, out, events=None):
     from difflib import SequenceMatcher
     norm = lambda t: ''.join(ch for ch in t.upper() if ch.isalnum())
     sim = lambda a, b: SequenceMatcher(None, norm(a), norm(b)).ratio()
+    try:
+        marques = [norm(l) for l in open(os.path.join(os.path.dirname(__file__), 'marques.txt'), encoding='utf-8') if l.strip() and not l.startswith('#')]
+    except OSError:
+        marques = []
+    def marque(t):
+        mots = [norm(m) for m in t.split()] + [norm(t)]
+        return any(len(m) >= 3 and (SequenceMatcher(None, m, b).ratio() > 0.75 or (len(b) >= 4 and b in m)) for m in mots for b in marques if b)
     garde2 = []
     for o in garde:
+        if marque(o['text']): scene.append(o); continue
         k = o['text'].upper().replace(' ', '')
         if cnt[k] >= 3 and len(pos[k]) >= 3: scene.append(o)
         elif any(sim(o['text'], x['text']) > 0.8 for x in scene_fort): scene.append(o)   # même mot que des logos filmés ailleurs

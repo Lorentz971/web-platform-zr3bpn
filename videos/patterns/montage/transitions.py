@@ -9,6 +9,53 @@ def _scale(M): return math.hypot(M[0][0], M[1][0]) if M else 1.0
 def _rot(M): return math.degrees(math.atan2(M[1][0], M[0][0])) if M else 0.0
 
 
+def _sujet_detoure(S, k):
+    """À une coupe : une grande forme irrégulière reste identique pendant que tout le reste de l'image change
+    = un sujet détouré (masque, rotoscopie) posé devant un nouveau fond. Renvoie sa position et sa taille, sinon None."""
+    G, rows, AW, AH, SC = S['grays'], S['rows'], S['AW'], S['AH'], S['SC']
+    a, b = G[k - 1].astype(np.int16), G[k].astype(np.int16)
+    d = np.abs(b - a)
+    zone = np.ones((AH, AW), bool)
+    tb = int(max(rows[k]['top_bar'], rows[k - 1]['top_bar']) / SC) + 2; bb = int(max(rows[k]['bot_bar'], rows[k - 1]['bot_bar']) / SC) + 2
+    zone[:tb] = False; zone[AH - bb:] = False                    # bandes noires : elles ne changent jamais
+    if zone.sum() < 0.5 * AW * AH: return None
+    change = (d > 40) & zone
+    if change.sum() < 0.35 * zone.sum(): return None             # le fond doit vraiment changer
+    reste = ((d < 12) & zone).astype(np.uint8)
+    reste = cv2.morphologyEx(reste, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+    tex = cv2.Laplacian(G[k], cv2.CV_32F); tex = np.abs(tex) > 8      # le sujet est détaillé (pas un aplat noir ou blanc)
+    n, lab, st, cen = cv2.connectedComponentsWithStats(reste)
+    best = None
+    for i in range(1, n):
+        x, y, w, h, ar = st[i]
+        frac = ar / zone.sum()
+        if not (0.04 < frac < 0.6): continue
+        comp = lab == i
+        if tex[comp].mean() < 0.15: continue                     # zone unie qui ne change pas (fond noir, ciel) : pas un sujet
+        cnt, _ = cv2.findContours(comp.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        c = max(cnt, key=cv2.contourArea); hull = cv2.contourArea(cv2.convexHull(c))
+        solid = cv2.contourArea(c) / (hull + 1e-6); rect = ar / (w * h)
+        if rect > 0.9: continue                                  # rectangle : une image dans l'image, pas un détourage
+        if best is None or ar > best[0]:
+            best = (ar, dict(sujet_centre_pct=[round((x + w / 2) / AW * 100), round((y + h / 2) / AH * 100)], sujet_taille_pct_ecran=round(frac * 100, 1),
+                             sujet_boite_pct=[round(x / AW * 100), round(y / AH * 100), round(w / AW * 100), round(h / AH * 100)], solidite=round(float(solid), 2)))
+    if best: return best[1]
+    # silhouette : la forme du sujet est remplie d'une couleur unie, le reste de l'image ne bouge pas
+    reste_frac = ((d < 12) & zone).sum() / zone.sum()
+    if reste_frac > 0.2:
+        ch = cv2.morphologyEx(((d > 40) & zone).astype(np.uint8), cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+        n, lab, st, _ = cv2.connectedComponentsWithStats(ch)
+        for i in range(1, n):
+            x, y, w, h, ar = st[i]; frac = ar / zone.sum()
+            if not (0.05 < frac < 0.6) or ar / (w * h) > 0.85: continue
+            comp = lab == i
+            if tex[comp].mean() < 0.06 and G[k][comp].std() < 12:
+                return dict(sujet_centre_pct=[round((x + w / 2) / AW * 100), round((y + h / 2) / AH * 100)], sujet_taille_pct_ecran=round(frac * 100, 1),
+                            sujet_boite_pct=[round(x / AW * 100), round(y / AH * 100), round(w / AW * 100), round(h / AH * 100)],
+                            silhouette=True, couleur='blanche' if G[k][comp].mean() > 180 else 'noire' if G[k][comp].mean() < 60 else 'unie')
+    return None
+
+
 def detect(S):
     rows, grays, NF, FPS, W0, AW, AH = S['rows'], S['grays'], S['NF'], S['FPS'], S['W0'], S['AW'], S['AH']
     T = lambda f: round(f / FPS, 2)
@@ -171,7 +218,10 @@ def detect(S):
     orb = cv2.ORB_create(1500)
     for k in np.nonzero(brk & ~used)[0]:
         kind, extra = 'coupe sèche', {}
-        if k in reframe:
+        det = _sujet_detoure(S, k)
+        if det:                                                  # le sujet reste, le fond change : masque / détourage
+            kind, extra = ('silhouette (sujet rempli d\'une couleur)' if det.get('silhouette') else 'changement de fond (sujet détouré)'), det
+        elif k in reframe:
             kind = 'coupe avec recadrage'; extra = dict(zoom_pct=round((reframe[k] - 1) * 100, 1))
         else:
             k1, d1 = orb.detectAndCompute(grays[k - 1], None); k2, d2 = orb.detectAndCompute(grays[k], None)
