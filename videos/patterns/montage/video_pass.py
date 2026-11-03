@@ -285,9 +285,9 @@ def _rapid_frame(fr, n):
                 ws = [q for q in tw if x - h <= q[2] <= x + w + h] or ws
         r = describe_line(fr, bb, ws)
         wl = [sum(ch.isalnum() for ch in q[0]) for q in ws]
-        grand_mot = len(wl) == 1 and wl[0] == 2 and r['conf'] >= 85 and h >= 0.04 * H0 and ws[0][0].isalpha()   # « IS », « ON », « GO » en gros
+        grand_mot = len(wl) == 1 and wl[0] == 2 and ws[0][0].isalpha() and ((r['conf'] >= 85 and h >= 0.04 * H0) or (r['conf'] >= 60 and h >= 0.05 * H0 and ws[0][0].isupper()))   # « IS », « ON », « GO » en gros
         grand_mot = grand_mot or (len(wl) == 1 and ws[0][0].strip('.,!?').isdigit() and r['conf'] >= 80 and h >= 0.035 * H0)   # « 1 », « 2 », « 10 » en gros
-        if r['conf'] >= 70 and (max(wl) >= 3 or len(wl) >= 2 or grand_mot):
+        if (r['conf'] >= 70 or grand_mot) and (max(wl) >= 3 or len(wl) >= 2 or grand_mot):
             samples.append(dict(f=n, box=bb, moteur='rapidocr', **r))
     samples += _gros_chiffres(fr, n, [s['box'] for s in samples] + [(int(x), int(y), int(w), int(h)) for (x, y, w, h), _ in lines])
     return dict(bands=[], samples=samples)

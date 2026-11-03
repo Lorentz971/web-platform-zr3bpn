@@ -204,14 +204,14 @@ def _trier(S, out, events=None):
         gros_chiffre = o['text'].strip('.,!?').isdigit() and o['hauteur_pct'] >= 3        # « 1 », « 2 » en gros : texte du montage
         if marque(o['text']) or (habillage_tv(o['text']) and not gros_chiffre and o['hauteur_pct'] < 4): scene.append(o); continue
         k = o['text'].upper().replace(' ', '')
-        if cnt[k] >= 3 and len(pos[k]) >= 3: scene.append(o)
+        if cnt[k] >= 3 and len(pos[k]) >= 3 and not o.get('suit_le_sujet'): scene.append(o)
         elif any(sim(o['text'], x['text']) > 0.8 for x in scene_fort): scene.append(o)   # même mot que des logos filmés ailleurs
         elif any(sim(o['text'], x['text']) > 0.8 or (len(norm(o['text'])) >= 3 and norm(o['text']) in norm(x['text'])) for x in fil): fil.append(o)
         else: garde2.append(o)
     # même texte lu deux fois à la suite (lecture partielle) : on garde la lecture la plus complète
     garde2.sort(key=lambda o: o['start_s']); fus = []
     for o in garde2:
-        p_ = next((q for q in reversed(fus) if abs(q['centre_y_pct'] - o['centre_y_pct']) <= 4 and o['start_s'] <= q['start_s'] + q['dur_s'] + 0.4
+        p_ = next((q for q in reversed(fus) if (abs(q['centre_y_pct'] - o['centre_y_pct']) <= 4 or (q.get('suit_le_sujet') and o.get('suit_le_sujet'))) and o['start_s'] <= q['start_s'] + q['dur_s'] + 0.4
                    and min(len(norm(o['text'])), len(norm(q['text']))) >= 4                     # « IS » après « THIS » : deux mots différents
                    and (norm(o['text']) in norm(q['text']) or norm(q['text']) in norm(o['text']) or sim(o['text'], q['text']) > 0.7)), None)
         if p_:
@@ -223,7 +223,7 @@ def _trier(S, out, events=None):
     # deux lignes l'une sous l'autre, au même moment et centrées pareil : un seul texte (titre sur deux lignes)
     garde2.sort(key=lambda o: (o['start_s'], o['centre_y_pct'])); bloc = []
     for o in garde2:
-        q = next((q for q in bloc if abs(q['start_s'] - o['start_s']) <= 0.4 and abs(q['start_s'] + q['dur_s'] - o['start_s'] - o['dur_s']) <= 0.4
+        q = next((q for q in bloc if not (q.get('suit_le_sujet') or o.get('suit_le_sujet')) and abs(q['start_s'] - o['start_s']) <= 0.4 and abs(q['start_s'] + q['dur_s'] - o['start_s'] - o['dur_s']) <= 0.4
                   and abs(q['centre_x_pct'] - o['centre_x_pct']) <= 12
                   and 0 < o['centre_y_pct'] - q['centre_y_pct'] <= 2.2 * max(q['hauteur_pct'], o['hauteur_pct']) and abs(q['hauteur_pct'] - o['hauteur_pct']) < 0.5 * max(q['hauteur_pct'], o['hauteur_pct'])), None)
         if q:

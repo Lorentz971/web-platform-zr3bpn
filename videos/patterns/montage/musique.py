@@ -113,14 +113,17 @@ def analyse(y, sr=22050, voix=None):
         else: nom = 'refrain / partie forte' if e > ref - 5 else 'couplet / partie calme'
         parties.append(dict(de_s=float(a), a_s=float(b), nom=nom, energie_db=round(float(e - ref), 1)))
     # cymbale inversée : un souffle aigu qui monte régulièrement puis s'arrête net (souvent juste avant un drop)
-    hi = _db(np.convolve(band(S, 5000, 11000), np.ones(4) / 4, 'same')); cymb = []
+    from scipy.ndimage import median_filter
+    hi = median_filter(_db(np.convolve(band(S, 5000, 11000), np.ones(4) / 4, 'same')), size=9); cymb = []   # lissé sur 0,2 s (sans les charlestons)
     fps_ = sr / hop; k = 0
     while k < len(hi) - 2:
         j = k
         while j + 1 < len(hi) and hi[j + 1] >= hi[j] - 0.6: j += 1
         dur = (j - k) / fps_
-        if 0.4 <= dur <= 2.5 and hi[j] - hi[k] > 12 and j + 3 < len(hi) and hi[j] - hi[j + 1:j + 4].min() > 8:
-            if np.polyfit(np.arange(j - k + 1), hi[k:j + 1], 1)[0] * fps_ > 6:
+        if 0.6 <= dur <= 2.5 and hi[j] - hi[k] > 12 and j + 6 < len(hi) and hi[j] - hi[j + 1:j + 7].min() > 8:
+            r_ = hi[k:j + 1]; tot_ = r_[-1] - r_[0]
+            progressive = (r_[len(r_) // 2] - r_[0]) > 0.2 * tot_ and np.max(np.diff(r_)) < 0.35 * tot_ and np.mean(np.diff(r_) > 0) > 0.6   # pas un simple saut
+            if progressive and np.polyfit(np.arange(j - k + 1), r_, 1)[0] * fps_ > 6:
                 cymb.append(dict(de_s=round(float(t[k]), 2), a_s=round(float(t[j]), 2), montee_db=round(float(hi[j] - hi[k]), 1)))
             k = j + 1
         else: k += 1
