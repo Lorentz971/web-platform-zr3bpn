@@ -14,7 +14,7 @@ Pour récupérer une vidéo YouTube ou TikTok : `yt-dlp -f "bv*+ba/b" -o video.m
 
 ## 1. Mesurer le pattern d'une vidéo
 
-`python3 analyse_montage.py VIDEO.mp4 DOSSIER` (environ 4 à 7 min de calcul par minute de vidéo).
+`python3 analyse_montage.py VIDEO.mp4 DOSSIER` (environ 2 à 3 min de calcul par minute de vidéo).
 
 | Famille | Ce qui est mesuré |
 |---|---|
@@ -83,7 +83,8 @@ modèles, l'outil marche quand même mais estime la voix au lieu de la transcrir
 |---|---|---|
 | `video-test-complete.py` → `verifier.py` | 24 s horizontale : coupes sur le temps, fondu, flash, glissement, tremblement, punch-in, poussée, rotation, ralenti, arrêt sur image, sous-titres, visage, couleurs, voix, musique, effets | **23 / 23** |
 | `video-test-v2.py` → `verifier_v2.py` | 40 s verticale : coupe avec recadrage, panoramique filé, glitch, zoom de transition, rideau, rotation, flash, speed ramp, marche arrière, sticker, flèche, bandeau, émoji, image dans l'image, écran partagé, barre de progression, sous-titres pop / mot par mot, carton de texte, capture d'écran, étalonnage, bandes noires, voix transcrite, 26 effets sonores | **41 / 42** (`verification_v2.md`) |
-| `video-test-rushs.py` | Faux rushs (face caméra + 2 illustrations + musique) pour tester `appliquer_pattern.py --rendu` de bout en bout | voir `conformite-exemple.md` |
+| La même vidéo n° 2, abîmée | très compressée / caméra à la main / bruit et flou | **36 / 32 / 27 sur 42** (détail dans `verification_v2.md`) |
+| `video-test-rushs.py` | Faux rushs (face caméra + 2 illustrations + musique) pour tester `appliquer_pattern.py --rendu` de bout en bout | conformité de notre montage au pattern : **58 à 61 %** (`conformite-exemple.md`) ; rythme, coupes, débit, sous-titres, barre de progression justes |
 
 ## Les limites (à garder en tête)
 
@@ -94,3 +95,5 @@ modèles, l'outil marche quand même mais estime la voix au lieu de la transcrir
 - **Visages** : détecteur classique, efficace de face, moins de profil.
 - **Transitions dans DaVinci / CapCut** : placées comme marqueurs nommés (le type et la durée), à appliquer avec l'effet du logiciel ; Remotion les rend directement.
 - **Vraies vidéos** : voir la section robustesse de `verification_v2.md` ; vérifiez les premières analyses à l'œil sur `timeline.png`.
+- **Ré-analyse de nos montages Remotion** : quelques effets fabriqués sont mal reconnus (petites incrustations posées sur une image très animée, zoom de transition lu comme un zoom) : la conformité affichée est donc un peu pessimiste.
+- **Coupes calées sur la musique et coupes dans les pauses** : quand on parle sans arrêt (silences retirés), les coupes tombent sur la parole ; le pattern d'une vidéo avec des passages musicaux ne peut pas être suivi à 100 %.

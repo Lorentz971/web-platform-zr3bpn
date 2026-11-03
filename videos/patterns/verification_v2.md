@@ -44,3 +44,13 @@
 | Effets sonores (moment + type) | 26 | 25 justes · manquent : clavier@9.5 · détectés en tout : 26 | ✅ |
 
 **41 / 42 justes.**
+## Robustesse : la même vidéo de test, abîmée
+
+| Version abîmée (fabriquée avec ffmpeg) | Résultat | Ce qui tient | Ce qui lâche |
+|---|---|---|---|
+| Très compressée, en 360×640 (qualité basse) | **36 / 42** | coupes, transitions, mouvements, incrustations, son | lecture d'une partie des sous-titres, glitch pris pour un fondu, teinte des ombres |
+| Caméra à la main (bougé permanent, textes compris) | **32 / 42** | coupes, la plupart des transitions, sous-titres, son | rideau, marche arrière, sticker, écran partagé, barre de progression (le test fait aussi bouger les textes et la barre, ce qui n'arrive pas dans une vraie vidéo : c'est plus sévère que la réalité) |
+| Bruit fort + flou (cas extrême) | **27 / 42** | coupes, la plupart des transitions, zooms, son | sous-titres, types de plan, écran partagé, image dans l'image, rideau, marche arrière |
+
+À retenir : sur une vidéo de qualité normale (YouTube, TikTok en 720p ou mieux), l'outil est fiable ; sur une vidéo très
+abîmée, ce sont surtout la lecture des textes et les éléments fins qui se perdent. Vérifiez alors la frise `timeline.png`.
