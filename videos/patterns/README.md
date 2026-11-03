@@ -30,6 +30,22 @@ Pour récupérer une vidéo YouTube ou TikTok : `yt-dlp -f "bv*+ba/b" -o video.m
 | **Son** | Volume (LUFS), voix transcrite mot par mot avec les temps (25 langues), pauses, débit (mots/min), temps de parole, tempo, coupes sur le temps, musique baissée sous la voix (dB), coupures de musique avant une révélation, effets sonores classés (whoosh, pop, clic, ding, impact, montée, glitch, déclencheur photo, clavier) et l'événement image sur lequel ils tombent, coupes pendant les pauses ou sur la parole |
 | **Structure** | Intensité seconde par seconde, accroche (durée, ce qu'elle contient), chapitres, relances |
 
+### Comprendre le montage (pas seulement le mesurer)
+
+Le rapport commence par une **lecture du montage**, partie par partie de la musique (intro, intro étouffée, montée, drop,
+pause, outro) : nombre de changements de plan, effets utilisés, textes, cadrages et gestes, phrase clé, arc d'énergie, boucle.
+Puis un tableau **« Rôle de chaque élément »** : pour chaque effet, la partie de la musique, sur quoi il est calé (drop, premier
+temps, caisse claire, grosse caisse, ouverture du filtre…), **à quoi il sert** (marquer le drop, cacher la coupe, mettre le héros
+en icône, préparer le drop…) et un degré de confiance. Le glossaire `montage/glossaire.py` donne pour chaque effet son rôle et
+comment le refaire dans After Effects, DaVinci, CapCut et Remotion.
+
+- **Musique** : tempo, temps et premiers temps, grosse caisse, caisse claire, drops (saut de graves, reprise après un silence,
+  ouverture d'un filtre), filtre « étouffé », parties.
+- **Contenu de l'image** (MediaPipe) : personnes, cadrage (gros plan, plan moyen, plan large), geste (bras levés, poing levé,
+  mains sur la tête…), expression (sourire, bouche ouverte, sourcils froncés).
+- **`planche.png`** : les images clés légendées (début de chaque partie, drops, effets, textes). Pour une lecture encore plus fine,
+  demandez à Claude : « lis rapport.md et planche.png et explique-moi ce montage ».
+
 ## 2. Combiner plusieurs vidéos (le style d'un créateur)
 
 `python3 agreger.py style.json out_video1 out_video2 out_video3` : pour chaque mesure, la valeur à viser (médiane),
@@ -84,6 +100,7 @@ modèles, l'outil marche quand même mais estime la voix au lieu de la transcrir
 |---|---|---|
 | `video-test-complete.py` → `verifier.py` | 24 s horizontale : coupes sur le temps, fondu, flash, glissement, tremblement, punch-in, poussée, rotation, ralenti, arrêt sur image, sous-titres, visage, couleurs, voix, musique, effets | **23 / 23** |
 | `video-test-v2.py` → `verifier_v2.py` | 40 s verticale : coupe avec recadrage, panoramique filé, glitch, zoom de transition, rideau, rotation, flash, speed ramp, marche arrière, sticker, flèche, bandeau, émoji, image dans l'image, écran partagé, barre de progression, sous-titres pop / mot par mot, carton de texte, capture d'écran, étalonnage, bandes noires, voix transcrite, 26 effets sonores | **41 / 42** (`verification_v2.md`) |
+| `video-test-musique.py` → `verifier_musique.py` | musique à 128 BPM : intro étouffée, drop à l'ouverture du filtre, silence puis drop | **5 / 5** |
 | La même vidéo n° 2, abîmée | très compressée / caméra à la main / bruit et flou | **36 / 32 / 27 sur 42** (détail dans `verification_v2.md`) |
 | `video-test-rushs.py` | Faux rushs (face caméra + 2 illustrations + musique) pour tester `appliquer_pattern.py --rendu` de bout en bout | conformité de notre montage au pattern : **58 à 61 %** (`conformite-exemple.md`) ; rythme, coupes, débit, sous-titres, barre de progression justes |
 

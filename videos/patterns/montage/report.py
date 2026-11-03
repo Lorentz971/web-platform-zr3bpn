@@ -4,7 +4,7 @@ import numpy as np
 
 
 def write(P, S, OUT, beat_t):
-    json.dump(P, open(os.path.join(OUT, 'pattern.json'), 'w'), indent=2, ensure_ascii=False)
+    json.dump(P, open(os.path.join(OUT, 'pattern.json'), 'w'), indent=2, ensure_ascii=False, default=lambda o: o.item() if hasattr(o, 'item') else str(o))
     import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
     NF, FPS = S['NF'], S['FPS']; dur = NF / FPS
     fig, ax = plt.subplots(6, 1, figsize=(15, 11), dpi=100, sharex=True, gridspec_kw=dict(height_ratios=[1.2, 1, 1, 1, 1, 1]))
@@ -33,6 +33,9 @@ def write(P, S, OUT, beat_t):
         top = max(so['volume_db_par_seconde']) if so['volume_db_par_seconde'] else 0
         for s in so['effets_sonores']: ax[4].plot(s['t'], top, 'v', color='#e2574c'); ax[4].text(s['t'], top + .3, s['type'].split(' ')[0], fontsize=5, rotation=60)
         for c in so.get('coupures_musique', []): ax[4].axvspan(c['start_s'], c['start_s'] + c['dur_s'], color='#e2574c', alpha=.3)
+    for d in (P.get('musique_detaillee') or {}).get('drops', []):
+        for a_ in ax: a_.axvline(d['t'], color='#e63946', ls='--', lw=1.5)
+        ax[4].text(d['t'], ax[4].get_ylim()[1], ' DROP', color='#e63946', fontsize=8, va='top')
     ax[4].set_ylabel('Son\nvert = voix')
     st = P['structure']
     ax[5].bar(np.arange(len(st['intensite_par_seconde'])) + .5, st['intensite_par_seconde'], color='#ff8a3d')
@@ -47,14 +50,31 @@ def write(P, S, OUT, beat_t):
         L += [f'## {title}', '| ' + ' | '.join(c[0] for c in cols) + ' |', '|' + '---|' * len(cols)]
         for it in items: L.append('| ' + ' | '.join(str(c[1](it)) for c in cols) + ' |')
         L.append('')
-    details = lambda d, skip: ', '.join(f"{k} : {v}" for k, v in d.items() if k not in skip and not k.startswith('_') and k != 'progression')
+    details = lambda d, skip: ', '.join(f"{k} : {v}" for k, v in d.items() if k not in skip and not k.startswith('_') and k not in ('progression', 'role', 'confiance', 'profil', 'panneaux'))
+    if P.get('lecture'):
+        L += ['## Lecture du montage (ce que fait chaque partie)'] + [f"- {x}" for x in P['lecture']] + ['']
+    M = P.get('musique_detaillee')
+    if M:
+        L += ['## Musique', f"- Tempo : {M.get('tempo_bpm')} BPM · {len(M.get('temps_s', []))} temps · {len(M.get('grosse_caisse_s', []))} coups de grosse caisse · {len(M.get('caisse_claire_s', []))} de caisse claire",
+              '- Drops : ' + (', '.join(f"{d['t']} s (+{d['saut_graves_db']} dB de graves" + (', silence avant' if d['silence_avant'] else '') + ')' for d in M.get('drops', [])) or 'aucun'),
+              '- Filtre étouffé : ' + (', '.join(f"{f['de_s']}–{f['a_s']} s (s'ouvre de {f['ouverture_db']} dB)" for f in M.get('filtres', [])) or 'aucun'),
+              '- Parties : ' + ' · '.join(f"{p['de_s']}–{p['a_s']} s {p['nom']}" for p in M.get('parties', [])), '']
+    hard = ('coupe sèche', 'jump cut')
+    elems = [(e['start_s'], e['type'], e) for e in P['transitions'] if e['type'] not in hard] + [(m['start_s'], m['type'], m) for m in P['mouvements']] + \
+            [(o['start_s'], o['type'], o) for o in P['incrustations']] + [(c['start_s'], f"texte « {c['text']} »", c) for c in P['sous_titres'] + P['textes_a_l_ecran']]
+    elems = [x for x in sorted(elems, key=lambda x: x[0]) if x[2].get('role')]
+    if elems:
+        table("Rôle de chaque élément", elems, [('Temps', lambda x: f"{x[0]} s"), ('Élément', lambda x: x[1]), ('Partie de la musique', lambda x: x[2]['role'].get('partie_musicale') or ''),
+                                              ('Calé sur', lambda x: x[2]['role'].get('lien_musique') or ''), ('À quoi ça sert', lambda x: x[2]['role'].get('fonction') or ''),
+                                              ('Confiance', lambda x: f"{round(100 * x[2].get('confiance', 0))} %")])
     table('Transitions et coupes', P['transitions'], [('Temps', lambda e: f"{e['start_s']} s"), ('Type', lambda e: e['type']), ('Détails', lambda e: details(e, ('type', 'start_s')))])
     table('Mouvements', P['mouvements'], [('Temps', lambda m: f"{m['start_s']} s"), ('Type', lambda m: m['type']), ('Détails', lambda m: details(m, ('type', 'start_s')))])
     table('Graphiques et incrustations', P['incrustations'], [('Début', lambda o: f"{o['start_s']} s"), ('Type', lambda o: o['type']), ('Détails', lambda o: details(o, ('type', 'start_s')))])
     table('Plans', P['plans'], [('Début', lambda s: f"{s['start_s']} s"), ('Durée', lambda s: f"{s['dur_s']} s"), ('Type', lambda s: s.get('type_de_plan')),
                                 ('Couleur', lambda s: f"lum. {s['luminosite']} % · contraste {s['contraste']} % · sat. {s['saturation']} % · {s['teinte']} · {s['temperature']}"),
                                 ('Étalonnage', lambda s: f"ombres {s['ombres']} · lumières {s['hautes_lumieres']}" + (f" · vignettage {s['vignettage']}" if s['vignettage'] else '') + (f" · grain {s['grain']}" if s['grain'] else '') + (f" · bandes noires {s['bandes_noires_pct']} %" if s['bandes_noires_pct'] else '')),
-                                ('Visage', lambda s: (f"{s['visage']['taille_pct_ecran']} % · centre {s['visage']['centre_pct']}" + (' · tiers haut' if s['visage']['sur_le_tiers_haut'] else '')) if s.get('visage') else '')])
+                                ('Visage', lambda s: (f"{s['visage']['taille_pct_ecran']} % · centre {s['visage']['centre_pct']}" + (' · tiers haut' if s['visage']['sur_le_tiers_haut'] else '')) if s.get('visage') else ''),
+                                ('Contenu', lambda s: ' · '.join(str(v) for k, v in (s.get('contenu') or {}).items() if k in ('cadrage', 'geste', 'expression')) + (f" · {s['contenu']['personnes']} pers." if (s.get('contenu') or {}).get('personnes', 0) > 1 else ''))])
     st_ = P['sous_titres_resume']
     L += ['## Sous-titres', ', '.join(f"{k} : {v}" for k, v in st_.items()), '']
     L += [f"- {c['start_s']} s · « {c['text']} » · {c['animation']}" + (f" · mot surligné : {c['mot_surligne']} ({c['couleur_surlignage']})" if c['mot_surligne'] else '') for c in P['sous_titres']]
@@ -73,3 +93,46 @@ def write(P, S, OUT, beat_t):
     L += ['', '![frise](timeline.png)']
     open(os.path.join(OUT, 'rapport.md'), 'w').write('\n'.join(L))
     return '\n'.join(L)
+
+
+
+def planche(P, S, OUT, maxi=24):
+    """Planche des images clés (début de chaque partie, drops, effets marquants), légendées : pour relire le montage d'un coup d'œil."""
+    import cv2
+    if not S.get('video'): return
+    hard = ('coupe sèche', 'jump cut')
+    pts = [(0.1, 'début')]
+    M = P.get('musique_detaillee') or {}
+    pts += [(p['de_s'] + 0.15, p['nom']) for p in M.get('parties', [])]
+    pts += [(d['t'] + 0.05, 'DROP') for d in M.get('drops', [])]
+    ev = [(e['start_s'] + 0.05, e['type']) for e in P['transitions'] + P['incrustations'] + P['mouvements'] if e['type'] not in hard and e['type'] != 'barre de progression']
+    ev += [(c['start_s'] + 0.1, f"« {c['text']} »") for c in P['sous_titres'] + P['textes_a_l_ecran']]
+    vus = []
+    for t, lab in pts + sorted(ev):
+        if all(abs(t - v[0]) > 0.25 for v in vus): vus.append((t, lab))
+        if len(vus) >= maxi: break
+    vus.sort()
+    cap = cv2.VideoCapture(S['video']); ims = []
+    W0, H0 = S['W0'], S['H0']; w = 240; h = int(round(w * H0 / W0))
+    for t, lab in vus:
+        cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000); ok, fr = cap.read()
+        if not ok: continue
+        im = cv2.resize(fr, (w, h)); cv2.rectangle(im, (0, 0), (w, 18), (0, 0, 0), -1)
+        ims.append(_legende(im, f"{t:.1f} s · {lab}"[:38]))
+    if not ims: return
+    while len(ims) % 6: ims.append(np.zeros_like(ims[0]))
+    cv2.imwrite(os.path.join(OUT, 'planche.png'), np.vstack([np.hstack(ims[i:i + 6]) for i in range(0, len(ims), 6)]))
+
+
+
+def _legende(im, txt):
+    """Écrit une légende avec les accents (Pillow), en haut de l'image."""
+    from PIL import Image, ImageDraw, ImageFont
+    import cv2
+    pil = Image.fromarray(cv2.cvtColor(im, cv2.COLOR_BGR2RGB)); d = ImageDraw.Draw(pil)
+    font = None
+    for f in ('DejaVuSans.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 'arial.ttf', 'C:/Windows/Fonts/arial.ttf', '/System/Library/Fonts/Supplemental/Arial.ttf'):
+        try: font = ImageFont.truetype(f, 12); break
+        except OSError: continue
+    d.text((3, 2), txt, fill=(255, 230, 0), font=font or ImageFont.load_default())
+    return cv2.cvtColor(np.array(pil), cv2.COLOR_RGB2BGR)

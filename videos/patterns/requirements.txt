@@ -15,3 +15,6 @@ pyclipper
 PyYAML
 Shapely
 six
+absl-py
+flatbuffers
+sounddevice

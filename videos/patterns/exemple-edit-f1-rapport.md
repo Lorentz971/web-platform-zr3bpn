@@ -2,6 +2,67 @@
 
 carré / autre · 21.97 s · 27 plans · 73.7 plans/min · plan moyen 0.67 s (médiane 0.6 s)
 
+## Lecture du montage (ce que fait chaque partie)
+- **0.0–5.4 s · intro** : 1 changements de plan (11/min, 1 calés sur la musique) ; punch-in ×5, rotation ×5, dézoom rapide ×3, panoramique ×2, accéléré ×1, recul lent ×1, ralenti ×1 ; textes : « DAMN » / « I CANT MOVE MY BODY » ; surtout des plans sans personne
+- **5.4–21.9 s · drop** : 31 changements de plan (112/min, 25 calés sur la musique) ; rampe de vitesse (velocity) ×13, transition (autre) ×2, panoramique filé ×2, glissement ×2, flash blanc ×2, fondu au noir ×1, punch-in ×1 ; textes : « SWITCH » ; surtout des gros plans (bras levés (célébration), main près du visage) → l'image explose avec la musique
+- **Phrase clé** : « My body » (3.06 s) — la musique est baissée de 10.8 dB pour la laisser entendre
+- **Arc d'énergie** : explosion puis retombée (début 30, milieu 54, fin 49 sur 100) ; sommet vers 15 s
+- **Boucle** : pas de boucle : la vidéo se termine au noir (1.7 s) sur la signature ou la fin
+
+## Musique
+- Tempo : 144 BPM · 51 temps · 6 coups de grosse caisse · 20 de caisse claire
+- Drops : 5.39 s (+18.1 dB de graves)
+- Filtre étouffé : aucun
+- Parties : 0.0–5.39 s intro · 5.39–21.95 s drop
+
+## Rôle de chaque élément
+| Temps | Élément | Partie de la musique | Calé sur | À quoi ça sert | Confiance |
+|---|---|---|---|---|---|
+| 0.1 s | punch-in | intro | sur le premier temps de la mesure | souligner un mot, une réaction, un coup de la musique ; ponctue le rythme (sur le premier temps de la mesure) ; fait partie de l'accroche (3 premières secondes) | 70 % |
+| 0.3 s | punch-in | intro | sur un contretemps | souligner un mot, une réaction, un coup de la musique ; fait partie de l'accroche (3 premières secondes) | 70 % |
+| 0.43 s | punch-in | intro | sur un temps | souligner un mot, une réaction, un coup de la musique ; fait partie de l'accroche (3 premières secondes) | 70 % |
+| 0.57 s | rotation | intro | hors temps | déséquilibre, dynamisme ; fait partie de l'accroche (3 premières secondes) | 70 % |
+| 0.67 s | punch-in | intro | sur un contretemps | souligner un mot, une réaction, un coup de la musique ; fait partie de l'accroche (3 premières secondes) | 70 % |
+| 0.97 s | rotation | intro | hors temps | déséquilibre, dynamisme ; fait partie de l'accroche (3 premières secondes) | 70 % |
+| 1.13 s | punch-in | intro | sur un contretemps | souligner un mot, une réaction, un coup de la musique ; fait partie de l'accroche (3 premières secondes) | 70 % |
+| 1.7 s | rotation | intro | sur le premier temps de la mesure | déséquilibre, dynamisme ; ponctue le rythme (sur le premier temps de la mesure) ; fait partie de l'accroche (3 premières secondes) | 70 % |
+| 2.03 s | accéléré | intro | sur un temps | énergie, compresser le temps ; fait partie de l'accroche (3 premières secondes) | 70 % |
+| 2.3 s | texte « DAMN » | intro | sur un contretemps | faire lire la phrase (son coupé), rythmer, mettre en valeur un mot ; fait partie de l'accroche (3 premières secondes) ; met en valeur la phrase dite « Yeah. » | 75 % |
+| 2.4 s | dézoom rapide | intro | hors temps |  ; fait partie de l'accroche (3 premières secondes) | 70 % |
+| 2.63 s | dézoom rapide | intro | hors temps |  ; fait partie de l'accroche (3 premières secondes) | 70 % |
+| 2.87 s | recul lent | intro | hors temps |  ; fait partie de l'accroche (3 premières secondes) | 70 % |
+| 3.07 s | ralenti | intro | sur la caisse claire | laisser voir un moment fort, émotion ; ponctue le rythme (sur la caisse claire) | 70 % |
+| 3.17 s | rotation | intro | sur la caisse claire | déséquilibre, dynamisme ; ponctue le rythme (sur la caisse claire) | 70 % |
+| 3.33 s | texte « I CANT MOVE MY BODY » | intro | sur le premier temps de la mesure | faire lire la phrase (son coupé), rythmer, mettre en valeur un mot ; ponctue le rythme (sur le premier temps de la mesure) ; met en valeur la phrase dite « My body » | 75 % |
+| 3.77 s | rotation | intro | sur un temps | déséquilibre, dynamisme | 70 % |
+| 3.83 s | dézoom rapide | intro | hors temps |  | 70 % |
+| 4.2 s | panoramique | intro | sur un temps | suivre ou découvrir ; prépare le drop (tension juste avant) | 70 % |
+| 5.2 s | panoramique | intro | sur un contretemps | suivre ou découvrir ; prépare le drop (tension juste avant) | 70 % |
+| 6.0 s | texte « SWITCH » | drop | hors temps | faire lire la phrase (son coupé), rythmer, mettre en valeur un mot | 75 % |
+| 6.27 s | punch-in | drop | sur un temps | souligner un mot, une réaction, un coup de la musique | 70 % |
+| 6.57 s | transition (autre) | drop | hors temps | transition non identifiée : à regarder sur la frise | 40 % |
+| 6.87 s | rampe de vitesse (velocity) | drop | sur un contretemps | figer un instant fort (geste, regard) au ralenti et coller les accélérations aux temps forts de la musique : le cœur d'un edit | 70 % |
+| 7.43 s | panoramique filé | drop | sur la grosse caisse | vitesse et énergie ; lie deux plans sur un temps fort ; ponctue le rythme (sur la grosse caisse) | 75 % |
+| 7.67 s | rampe de vitesse (velocity) | drop | sur un contretemps | figer un instant fort (geste, regard) au ralenti et coller les accélérations aux temps forts de la musique : le cœur d'un edit | 70 % |
+| 8.47 s | rampe de vitesse (velocity) | drop | sur la caisse claire | figer un instant fort (geste, regard) au ralenti et coller les accélérations aux temps forts de la musique : le cœur d'un edit ; ponctue le rythme (sur la caisse claire) | 70 % |
+| 9.13 s | glissement | drop | sur la grosse caisse | changer de plan en restant dans le mouvement ; dynamique, propre ; ponctue le rythme (sur la grosse caisse) | 75 % |
+| 9.37 s | rampe de vitesse (velocity) | drop | sur un contretemps | figer un instant fort (geste, regard) au ralenti et coller les accélérations aux temps forts de la musique : le cœur d'un edit | 70 % |
+| 10.07 s | rampe de vitesse (velocity) | drop | sur le premier temps de la mesure | figer un instant fort (geste, regard) au ralenti et coller les accélérations aux temps forts de la musique : le cœur d'un edit ; ponctue le rythme (sur le premier temps de la mesure) | 70 % |
+| 10.93 s | rampe de vitesse (velocity) | drop | hors temps | figer un instant fort (geste, regard) au ralenti et coller les accélérations aux temps forts de la musique : le cœur d'un edit | 70 % |
+| 11.63 s | glissement | drop | sur le premier temps de la mesure | changer de plan en restant dans le mouvement ; dynamique, propre ; ponctue le rythme (sur le premier temps de la mesure) | 75 % |
+| 12.53 s | flash blanc | drop | sur un temps | ponctuer un coup de la musique, cacher la coupe, effet « impact » ; cache la coupe | 90 % |
+| 12.6 s | rampe de vitesse (velocity) | drop | hors temps | figer un instant fort (geste, regard) au ralenti et coller les accélérations aux temps forts de la musique : le cœur d'un edit | 70 % |
+| 13.27 s | transition (autre) | drop | sur la grosse caisse | transition non identifiée : à regarder sur la frise ; ponctue le rythme (sur la grosse caisse) | 40 % |
+| 13.53 s | rampe de vitesse (velocity) | drop | sur un contretemps | figer un instant fort (geste, regard) au ralenti et coller les accélérations aux temps forts de la musique : le cœur d'un edit | 70 % |
+| 14.13 s | panoramique filé | drop | sur un temps | vitesse et énergie ; lie deux plans sur un temps fort | 75 % |
+| 15.9 s | rampe de vitesse (velocity) | drop | sur un temps | figer un instant fort (geste, regard) au ralenti et coller les accélérations aux temps forts de la musique : le cœur d'un edit | 70 % |
+| 16.73 s | rampe de vitesse (velocity) | drop | sur le premier temps de la mesure | figer un instant fort (geste, regard) au ralenti et coller les accélérations aux temps forts de la musique : le cœur d'un edit ; ponctue le rythme (sur le premier temps de la mesure) | 70 % |
+| 17.6 s | rampe de vitesse (velocity) | drop | sur un contretemps | figer un instant fort (geste, regard) au ralenti et coller les accélérations aux temps forts de la musique : le cœur d'un edit | 70 % |
+| 18.4 s | rampe de vitesse (velocity) | drop | sur un contretemps | figer un instant fort (geste, regard) au ralenti et coller les accélérations aux temps forts de la musique : le cœur d'un edit | 70 % |
+| 19.47 s | rampe de vitesse (velocity) | drop | sur un temps | figer un instant fort (geste, regard) au ralenti et coller les accélérations aux temps forts de la musique : le cœur d'un edit | 70 % |
+| 20.0 s | flash blanc | drop | sur la grosse caisse | ponctuer un coup de la musique, cacher la coupe, effet « impact » ; ponctue le rythme (sur la grosse caisse) ; cache la coupe | 90 % |
+| 20.3 s | fondu au noir | drop | sur un temps | fermer une partie ou la vidéo, laisser respirer avant la signature | 90 % |
+
 ## Transitions et coupes
 | Temps | Type | Détails |
 |---|---|---|
@@ -60,64 +121,61 @@ carré / autre · 21.97 s · 27 plans · 73.7 plans/min · plan moyen 0.67 s (m�
 | 4.2 s | panoramique | dur_s : 0.47, deplacement_px : [153, 9], part_de_l_ecran_pct : 27, direction : droite |
 | 5.2 s | panoramique | dur_s : 0.67, deplacement_px : [205, -5], part_de_l_ecran_pct : 36, direction : droite |
 | 6.27 s | punch-in | dur_frames : 9, dur_s : 0.3, zoom_pct : 13.0, vitesse_max_pct_par_image : 2.3, courbe : accélère (ease-in), rebond : False, point_vise_pct : [40, 53] |
-| 6.87 s | rampe de vitesse (velocity) | dur_s : 0.5, forme : rapide puis lent, vitesse_max_pct : 2.04, vitesse_min_pct : 0.41, rapport : 5.0, profil : [2.04, 1.76, 1.45, 0.95, 0.83, 0.8, 0.68, 0.68, 0.6, 0.61, 0.58, 0.57, 0.52, 0.41, 0.44, 0.91, 1.43] |
-| 7.67 s | rampe de vitesse (velocity) | dur_s : 0.3, forme : rapide puis lent, vitesse_max_pct : 1.85, vitesse_min_pct : 0.44, rapport : 4.2, profil : [1.85, 1.3, 0.68, 0.49, 0.45, 0.48, 0.47, 0.46, 0.44] |
-| 8.47 s | rampe de vitesse (velocity) | dur_s : 0.63, forme : rapide puis lent, vitesse_max_pct : 5.06, vitesse_min_pct : 0.31, rapport : 16.3, profil : [4.75, 5.06, 4.24, 2.71, 1.56, 1.37, 0.97, 0.64, 0.54, 0.48, 0.59, 0.65, 0.59, 0.52, 0.41, 0.31, 0.38, 0.84, 1.46, 1.95] |
-| 9.37 s | rampe de vitesse (velocity) | dur_s : 0.63, forme : lent puis rapide, vitesse_max_pct : 7.02, vitesse_min_pct : 0.62, rapport : 11.4, profil : [4.14, 2.92, 1.58, 1.43, 1.2, 1.05, 0.92, 0.81, 0.71, 0.62, 0.62, 0.65, 0.83, 0.74, 0.91, 1.81, 2.33, 3.59, 3.23, 5.62, 7.02] |
-| 10.07 s | rampe de vitesse (velocity) | dur_s : 0.7, forme : rapide puis lent, vitesse_max_pct : 8.99, vitesse_min_pct : 0.35, rapport : 25.6, profil : [6.5, 6.61, 6.44, 4.44, 2.81, 1.68, 1.15, 0.97, 0.75, 0.68, 0.73, 0.57, 0.47, 0.46, 0.5, 0.52, 0.52, 0.4, 0.35, 0.55, 0.87, 3.51, 6.28, 8.99] |
-| 10.93 s | rampe de vitesse (velocity) | dur_s : 0.37, forme : rapide puis lent, vitesse_max_pct : 5.0, vitesse_min_pct : 0.6, rapport : 8.4, profil : [5.0, 4.76, 3.42, 2.13, 0.95, 0.87, 0.8, 0.71, 0.62, 0.6, 0.66] |
-| 12.6 s | rampe de vitesse (velocity) | dur_s : 0.6, forme : rapide puis lent, vitesse_max_pct : 4.03, vitesse_min_pct : 0.86, rapport : 4.7, profil : [4.03, 3.66, 2.94, 2.94, 2.45, 2.49, 2.0, 1.68, 1.35, 1.39, 1.34, 1.09, 0.9, 0.86, 1.15, 1.01, 1.0, 1.08, 1.54, 1.87] |
-| 13.53 s | rampe de vitesse (velocity) | dur_s : 0.53, forme : rapide puis lent, vitesse_max_pct : 2.97, vitesse_min_pct : 0.38, rapport : 7.8, profil : [2.97, 2.1, 1.27, 1.15, 1.05, 0.93, 0.73, 0.66, 0.57, 0.53, 0.54, 0.52, 0.48, 0.39, 0.38, 0.62, 1.25, 1.83] |
-| 15.9 s | rampe de vitesse (velocity) | dur_s : 0.77, forme : rapide puis lent puis rapide, vitesse_max_pct : 7.02, vitesse_min_pct : 0.59, rapport : 12.0, profil : [6.42, 5.8, 3.94, 2.88, 1.52, 1.35, 1.11, 0.95, 0.81, 0.72, 0.65, 0.63, 0.59, 0.65, 0.82, 0.77, 0.9, 1.8, 2.4, 3.71, 3.35, 5.66, 7.02] |
-| 16.73 s | rampe de vitesse (velocity) | dur_s : 0.73, forme : rapide puis lent, vitesse_max_pct : 7.23, vitesse_min_pct : 0.31, rapport : 23.3, profil : [7.23, 6.99, 6.39, 4.43, 2.78, 1.71, 1.17, 0.98, 0.74, 0.65, 0.66, 0.49, 0.39, 0.38, 0.43, 0.44, 0.43, 0.32, 0.31, 0.54, 0.91, 1.77, 3.36, 4.85] |
-| 17.6 s | rampe de vitesse (velocity) | dur_s : 0.3, forme : rapide puis lent, vitesse_max_pct : 5.25, vitesse_min_pct : 0.63, rapport : 8.3, profil : [5.25, 4.94, 3.54, 2.1, 0.89, 0.8, 0.74, 0.69, 0.63] |
-| 18.4 s | rampe de vitesse (velocity) | dur_s : 0.73, forme : rapide puis lent, vitesse_max_pct : 5.95, vitesse_min_pct : 0.21, rapport : 27.8, profil : [5.95, 5.11, 3.71, 1.94, 1.31, 1.2, 1.01, 0.89, 0.76, 0.62, 0.51, 0.4, 0.3, 0.24, 0.22, 0.21, 0.22, 0.27, 0.38, 0.6, 1.01, 1.37] |
-| 19.47 s | rampe de vitesse (velocity) | dur_s : 0.53, forme : lent puis rapide, vitesse_max_pct : 5.84, vitesse_min_pct : 0.36, rapport : 16.4, profil : [3.84, 3.51, 2.77, 2.82, 2.25, 2.3, 1.83, 1.56, 1.29, 1.41, 1.37, 1.06, 0.79, 0.7, 0.62, 0.47, 0.36, 0.49, 1.0, 2.45, 4.3, 5.84] |
+| 6.87 s | rampe de vitesse (velocity) | dur_s : 0.5, forme : rapide puis lent, vitesse_max_pct : 2.04, vitesse_min_pct : 0.41, rapport : 5.0 |
+| 7.67 s | rampe de vitesse (velocity) | dur_s : 0.3, forme : rapide puis lent, vitesse_max_pct : 1.85, vitesse_min_pct : 0.44, rapport : 4.2 |
+| 8.47 s | rampe de vitesse (velocity) | dur_s : 0.63, forme : rapide puis lent, vitesse_max_pct : 5.06, vitesse_min_pct : 0.31, rapport : 16.3 |
+| 9.37 s | rampe de vitesse (velocity) | dur_s : 0.63, forme : lent puis rapide, vitesse_max_pct : 7.02, vitesse_min_pct : 0.62, rapport : 11.4 |
+| 10.07 s | rampe de vitesse (velocity) | dur_s : 0.7, forme : rapide puis lent, vitesse_max_pct : 8.99, vitesse_min_pct : 0.35, rapport : 25.6 |
+| 10.93 s | rampe de vitesse (velocity) | dur_s : 0.37, forme : rapide puis lent, vitesse_max_pct : 5.0, vitesse_min_pct : 0.6, rapport : 8.4 |
+| 12.6 s | rampe de vitesse (velocity) | dur_s : 0.6, forme : rapide puis lent, vitesse_max_pct : 4.03, vitesse_min_pct : 0.86, rapport : 4.7 |
+| 13.53 s | rampe de vitesse (velocity) | dur_s : 0.53, forme : rapide puis lent, vitesse_max_pct : 2.97, vitesse_min_pct : 0.38, rapport : 7.8 |
+| 15.9 s | rampe de vitesse (velocity) | dur_s : 0.77, forme : rapide puis lent puis rapide, vitesse_max_pct : 7.02, vitesse_min_pct : 0.59, rapport : 12.0 |
+| 16.73 s | rampe de vitesse (velocity) | dur_s : 0.73, forme : rapide puis lent, vitesse_max_pct : 7.23, vitesse_min_pct : 0.31, rapport : 23.3 |
+| 17.6 s | rampe de vitesse (velocity) | dur_s : 0.3, forme : rapide puis lent, vitesse_max_pct : 5.25, vitesse_min_pct : 0.63, rapport : 8.3 |
+| 18.4 s | rampe de vitesse (velocity) | dur_s : 0.73, forme : rapide puis lent, vitesse_max_pct : 5.95, vitesse_min_pct : 0.21, rapport : 27.8 |
+| 19.47 s | rampe de vitesse (velocity) | dur_s : 0.53, forme : lent puis rapide, vitesse_max_pct : 5.84, vitesse_min_pct : 0.36, rapport : 16.4 |
 
 ## Graphiques et incrustations
 | Début | Type | Détails |
 |---|---|---|
 
 ## Plans
-| Début | Durée | Type | Couleur | Étalonnage | Visage |
-|---|---|---|---|---|---|
-| 0.0 s | 4.13 s | illustration | lum. 46 % · contraste 28 % · sat. 15 % · neutre · neutre | ombres magenta · lumières orangée · grain 3.3 |  |
-| 4.17 s | 2.4 s | illustration | lum. 52 % · contraste 24 % · sat. 10 % · neutre · neutre | ombres neutre · lumières orangée · grain 12.9 |  |
-| 6.83 s | 0.6 s | illustration | lum. 28 % · contraste 16 % · sat. 15 % · neutre · neutre | ombres neutre · lumières neutre |  |
-| 7.63 s | 0.33 s | illustration | lum. 15 % · contraste 22 % · sat. 41 % · bleu · neutre | ombres neutre · lumières orangée · vignettage 0.14 |  |
-| 8.0 s | 0.13 s | illustration | lum. 60 % · contraste 34 % · sat. 7 % · neutre · neutre | ombres neutre · lumières neutre |  |
-| 8.17 s | 0.13 s | illustration | lum. 56 % · contraste 37 % · sat. 9 % · neutre · neutre | ombres neutre · lumières neutre |  |
-| 8.43 s | 0.7 s | illustration | lum. 46 % · contraste 37 % · sat. 27 % · orange · chaude | ombres neutre · lumières jaune · vignettage 0.15 |  |
-| 9.27 s | 0.73 s | illustration | lum. 39 % · contraste 32 % · sat. 16 % · neutre · neutre | ombres neutre · lumières orangée · vignettage 0.35 · grain 3.0 |  |
-| 10.03 s | 0.83 s | illustration | lum. 41 % · contraste 30 % · sat. 18 % · bleu · neutre | ombres neutre · lumières neutre |  |
-| 10.9 s | 0.4 s | illustration | lum. 22 % · contraste 29 % · sat. 24 % · violet · neutre | ombres neutre · lumières neutre · grain 3.3 |  |
-| 11.33 s | 0.13 s | illustration | lum. 57 % · contraste 34 % · sat. 6 % · neutre · neutre | ombres neutre · lumières neutre |  |
-| 11.5 s | 0.13 s | illustration | lum. 58 % · contraste 35 % · sat. 8 % · neutre · neutre | ombres neutre · lumières neutre · grain 3.7 |  |
-| 11.73 s | 0.73 s | illustration | lum. 42 % · contraste 28 % · sat. 13 % · neutre · neutre | ombres neutre · lumières neutre |  |
-| 12.57 s | 0.7 s | illustration | lum. 56 % · contraste 34 % · sat. 11 % · neutre · neutre | ombres neutre · lumières neutre |  |
-| 13.5 s | 0.63 s | illustration | lum. 28 % · contraste 16 % · sat. 14 % · neutre · neutre | ombres neutre · lumières neutre |  |
-| 14.33 s | 0.33 s | illustration | lum. 16 % · contraste 23 % · sat. 41 % · bleu · neutre | ombres neutre · lumières jaune · vignettage 0.12 |  |
-| 14.7 s | 0.13 s | illustration | lum. 60 % · contraste 35 % · sat. 7 % · neutre · neutre | ombres neutre · lumières neutre |  |
-| 14.87 s | 0.13 s | illustration | lum. 54 % · contraste 36 % · sat. 9 % · neutre · neutre | ombres neutre · lumières neutre |  |
-| 15.1 s | 0.73 s | illustration | lum. 47 % · contraste 37 % · sat. 26 % · orange · chaude | ombres neutre · lumières jaune · vignettage 0.13 |  |
-| 15.87 s | 0.8 s | illustration | lum. 39 % · contraste 32 % · sat. 15 % · neutre · neutre | ombres neutre · lumières orangée · vignettage 0.34 · grain 3.1 | 0.7 % · centre [33, 86] |
-| 16.7 s | 0.83 s | illustration | lum. 42 % · contraste 30 % · sat. 18 % · bleu · neutre | ombres neutre · lumières neutre |  |
-| 17.57 s | 0.33 s | illustration | lum. 23 % · contraste 30 % · sat. 25 % · violet · neutre | ombres neutre · lumières neutre · grain 3.4 |  |
-| 17.93 s | 0.13 s | illustration | lum. 58 % · contraste 34 % · sat. 6 % · neutre · neutre | ombres neutre · lumières neutre |  |
-| 18.1 s | 0.13 s | illustration | lum. 54 % · contraste 34 % · sat. 9 % · neutre · neutre | ombres neutre · lumières neutre · grain 3.7 |  |
-| 18.37 s | 0.77 s | illustration | lum. 42 % · contraste 28 % · sat. 13 % · neutre · neutre | ombres neutre · lumières neutre |  |
-| 19.23 s | 0.77 s | illustration | lum. 55 % · contraste 34 % · sat. 12 % · neutre · neutre | ombres neutre · lumières neutre · grain 2.6 |  |
-| 20.07 s | 0.23 s | graphique / animation | lum. 46 % · contraste 2 % · sat. 0 % · neutre · neutre | ombres neutre · lumières neutre |  |
+| Début | Durée | Type | Couleur | Étalonnage | Visage | Contenu |
+|---|---|---|---|---|---|---|
+| 0.0 s | 4.13 s | illustration | lum. 46 % · contraste 28 % · sat. 15 % · neutre · neutre | ombres magenta · lumières orangée · grain 3.3 |  | sans personne |
+| 4.17 s | 2.4 s | illustration | lum. 52 % · contraste 24 % · sat. 10 % · neutre · neutre | ombres neutre · lumières orangée · grain 12.9 |  | sans personne |
+| 6.83 s | 0.6 s | illustration | lum. 28 % · contraste 16 % · sat. 15 % · neutre · neutre | ombres neutre · lumières neutre |  | sans personne |
+| 7.63 s | 0.33 s | illustration | lum. 15 % · contraste 22 % · sat. 41 % · bleu · neutre | ombres neutre · lumières orangée · vignettage 0.14 |  | gros plan |
+| 8.0 s | 0.13 s | illustration | lum. 60 % · contraste 34 % · sat. 7 % · neutre · neutre | ombres neutre · lumières neutre |  | gros plan |
+| 8.17 s | 0.13 s | illustration | lum. 56 % · contraste 37 % · sat. 9 % · neutre · neutre | ombres neutre · lumières neutre |  | gros plan |
+| 8.43 s | 0.7 s | illustration | lum. 46 % · contraste 37 % · sat. 27 % · orange · chaude | ombres neutre · lumières jaune · vignettage 0.15 |  | gros plan |
+| 9.27 s | 0.73 s | illustration | lum. 39 % · contraste 32 % · sat. 16 % · neutre · neutre | ombres neutre · lumières orangée · vignettage 0.35 · grain 3.0 |  | gros plan |
+| 10.03 s | 0.83 s | illustration | lum. 41 % · contraste 30 % · sat. 18 % · bleu · neutre | ombres neutre · lumières neutre |  | sans personne |
+| 10.9 s | 0.4 s | illustration | lum. 22 % · contraste 29 % · sat. 24 % · violet · neutre | ombres neutre · lumières neutre · grain 3.3 |  | gros plan · main près du visage · sourire |
+| 11.33 s | 0.13 s | illustration | lum. 57 % · contraste 34 % · sat. 6 % · neutre · neutre | ombres neutre · lumières neutre |  | gros plan |
+| 11.5 s | 0.13 s | illustration | lum. 58 % · contraste 35 % · sat. 8 % · neutre · neutre | ombres neutre · lumières neutre · grain 3.7 |  | gros plan · debout, neutre · sourire |
+| 11.73 s | 0.73 s | illustration | lum. 42 % · contraste 28 % · sat. 13 % · neutre · neutre | ombres neutre · lumières neutre |  | gros plan · bras levés (célébration) |
+| 12.57 s | 0.7 s | illustration | lum. 56 % · contraste 34 % · sat. 11 % · neutre · neutre | ombres neutre · lumières neutre |  | plan moyen · 5 pers. |
+| 13.5 s | 0.63 s | illustration | lum. 28 % · contraste 16 % · sat. 14 % · neutre · neutre | ombres neutre · lumières neutre |  | plan large |
+| 14.33 s | 0.33 s | illustration | lum. 16 % · contraste 23 % · sat. 41 % · bleu · neutre | ombres neutre · lumières jaune · vignettage 0.12 |  | gros plan |
+| 14.7 s | 0.13 s | illustration | lum. 60 % · contraste 35 % · sat. 7 % · neutre · neutre | ombres neutre · lumières neutre |  | gros plan |
+| 14.87 s | 0.13 s | illustration | lum. 54 % · contraste 36 % · sat. 9 % · neutre · neutre | ombres neutre · lumières neutre |  | gros plan |
+| 15.1 s | 0.73 s | illustration | lum. 47 % · contraste 37 % · sat. 26 % · orange · chaude | ombres neutre · lumières jaune · vignettage 0.13 |  | gros plan |
+| 15.87 s | 0.8 s | illustration | lum. 39 % · contraste 32 % · sat. 15 % · neutre · neutre | ombres neutre · lumières orangée · vignettage 0.34 · grain 3.1 | 0.7 % · centre [33, 86] | gros plan |
+| 16.7 s | 0.83 s | illustration | lum. 42 % · contraste 30 % · sat. 18 % · bleu · neutre | ombres neutre · lumières neutre |  | sans personne |
+| 17.57 s | 0.33 s | illustration | lum. 23 % · contraste 30 % · sat. 25 % · violet · neutre | ombres neutre · lumières neutre · grain 3.4 |  | gros plan · neutre |
+| 17.93 s | 0.13 s | illustration | lum. 58 % · contraste 34 % · sat. 6 % · neutre · neutre | ombres neutre · lumières neutre |  | gros plan |
+| 18.1 s | 0.13 s | illustration | lum. 54 % · contraste 34 % · sat. 9 % · neutre · neutre | ombres neutre · lumières neutre · grain 3.7 |  | gros plan · debout, neutre |
+| 18.37 s | 0.77 s | illustration | lum. 42 % · contraste 28 % · sat. 13 % · neutre · neutre | ombres neutre · lumières neutre |  | gros plan · bras levés (célébration) |
+| 19.23 s | 0.77 s | illustration | lum. 55 % · contraste 34 % · sat. 12 % · neutre · neutre | ombres neutre · lumières neutre · grain 2.6 |  | plan moyen · 6 pers. |
+| 20.07 s | 0.23 s | graphique / animation | lum. 46 % · contraste 2 % · sat. 0 % · neutre · neutre | ombres neutre · lumières neutre |  | sans personne |
 
 ## Sous-titres
-nombre : 3, mots_par_sous_titre : 2.3, duree_moyenne_s : 0.34, position_y_pct : 72, hauteur_texte_pct : 7.6, couleur_surlignage : None, part_avec_mot_surligne_pct : 0, majuscules : True, contour_noir : False, animations : {'pop': 1, 'apparition sèche': 2}, filigranes : ['@afok.f1', '@rufuk.f1', '@ufuk.f', '@ufuk.f1', '@ufuk.ff', '@uluk.n', '@utuk.f1', 'J TikTok', 'JTikTok', 'Red Bull', 'RedBull', 'TiKTOK', 'Tik TO', 'TikTOk', 'TikTok', 'TkTok', 'UFUK', 'uk f1'], textes_de_la_scene : ['ARLYLE', 'ATA', 'ATAD', 'BBIT', 'BYBIT', 'CANT MOVE MY BODY', 'CARLYL', 'CARLYLE', 'CARLYLY', 'CGate', 'CPORTS', 'CashApp', 'CathApp', 'DANAC', 'DRAC LE', 'DRACLE', 'Dviaplay', 'FAOING', 'Gate', 'HONDA', 'Heuel', 'Inter.mx', 'JKERSTARS', 'JUMBU.com', 'KERSTARS', 'M bil', 'Mobi RedBull', 'Mobil', 'Mobily', 'Mobin RedBull', 'ORACE', 'ORACL', 'ORACLE', 'Plaver00', 'Player00', 'RAIR', 'RAOING', 'RERSTARS', 'RMOING', 'Red Boll', 'Red Bu', 'Red Bull', 'RedBull', 'Rer', 'TAG', 'TRADE', 'TRADE AVA', 'TRADE CANTSMOVEMY BODY', 'UMBU com', 'UMBU.com', 'VISA', 'WAYS', 'WCASTO', 'WSA', 'ZRACLE', 'aparco', 'en ORACLE', 'eparco', 'inter.mx', 'sparco']
+nombre : 3, mots_par_sous_titre : 2.3, duree_moyenne_s : 0.34, position_y_pct : 72, hauteur_texte_pct : 7.6, couleur_surlignage : None, part_avec_mot_surligne_pct : 0, majuscules : True, contour_noir : False, animations : {'pop': 1, 'apparition sèche': 2}, filigranes : ['@afok.f1', '@rufuk.f1', '@ufuk.f', '@ufuk.f1', '@ufuk.ff', '@uluk.n', '@utuk.f1', 'J TikTok', 'JTikTok', 'Red Bull', 'RedBull', 'TiKTOK', 'Tik TO', 'TikTOk', 'TikTok', 'TkTok', 'UFUK', 'uk f1'], textes_de_la_scene : ['ARLYLE', 'ATA', 'ATAD', 'BBIT', 'BYBIT', 'CANT MOVE MY BODY', 'CARLYL', 'CARLYLE', 'CARLYLY', 'CGate', 'CPORTS', 'CashApp', 'CathApp', 'DANAC', 'DRAC LE', 'DRACLE', 'Dviaplay', 'FAOING', 'Gate', 'HONDA', 'Heuel', 'Inter.mx', 'JKERSTARS', 'JUMBU.com', 'KERSTARS', 'M bil', 'Mobi RedBull', 'Mobil', 'Mobily', 'Mobin RedBull', 'ORACE', 'ORACL', 'ORACLE', 'Plaver00', 'Player00', 'RAIR', 'RAOING', 'RERSTARS', 'RMOING', 'Red Boll', 'Red Bu', 'Red Bull', 'RedBull', "RedBum 'ORACLE", 'Rer', 'TAG', 'TRADE', 'TRADE AVA', 'TRADE CANTSMOVEMY BODY', 'UMBU com', 'UMBU.com', 'VISA', 'WAYS', 'WCASTO', 'WSA', 'ZRACLE', 'aparco', 'en ORACLE', 'eparco', 'inter.mx']
 
 - 2.3 s · « DAMN » · apparition sèche
 - 3.33 s · « I CANT MOVE MY BODY » · pop
 - 6.0 s · « SWITCH » · apparition sèche
-
-## Autres textes à l'écran
-- 4.47 s · « RedBum 'ORACLE » · apparition sèche · hauteur 6.9 % · centre 56 / 56 %
 
 ## Son
 - lufs_integre : -12.9

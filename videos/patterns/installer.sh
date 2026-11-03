@@ -17,7 +17,7 @@ echo "== 2/4 Modules Python"
 PIP="python3 -m pip install --upgrade"; $PIP -r requirements.txt >/dev/null 2>&1 || PIP="python3 -m pip install --break-system-packages --upgrade"
 $PIP -r requirements.txt
 # lecture des textes stylisés (RapidOCR) sans laisser remplacer OpenCV par une version 5 (qui n'a plus la détection de visages)
-$PIP --no-deps rapidocr_onnxruntime
+$PIP --no-deps rapidocr_onnxruntime mediapipe
 python3 -m pip uninstall -y opencv-python >/dev/null 2>&1 || python3 -m pip uninstall -y --break-system-packages opencv-python >/dev/null 2>&1 || true
 echo "== 3/4 Modèles d'écoute (transcription, voix, séparation voix / musique : ~600 Mo, une seule fois)"
 python3 telecharger_modeles.py

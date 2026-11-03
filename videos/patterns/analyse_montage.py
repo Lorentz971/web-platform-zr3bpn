@@ -9,7 +9,7 @@ import os, sys, time
 from difflib import SequenceMatcher
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from montage import video_pass, transitions, motion, overlays, text, look, audio, structure, report
+from montage import video_pass, transitions, motion, overlays, text, look, audio, structure, report, musique, roles, contenu
 
 
 def analyse(video, out='.', quiet=False, cache=None):
@@ -98,6 +98,8 @@ def analyse(video, out='.', quiet=False, cache=None):
         return rects
     moves = motion.detect(S, shots, exclude)
     shots = look.per_shot(S, shots, capt, others, ovl)
+    shots = contenu.par_plan(S, shots)                       # personnes, cadrage, geste, expression
+    contenu._fermer()
     log('4/6 Son (voix, musique, effets)…')
     if cache and os.environ.get('SKIP_AUDIO') and os.path.exists(cache + '.audio.pkl'): so, beat_t = pickle.load(open(cache + '.audio.pkl', 'rb'))
     else:
@@ -115,7 +117,25 @@ def analyse(video, out='.', quiet=False, cache=None):
              transitions=events, plans=shots, mouvements=moves, incrustations=ovl, sous_titres=capt, sous_titres_resume=capt_sum, textes_a_l_ecran=others,
              visages=look.faces_summary(S), son=so, structure=st, duree_analyse_s=round(time.time() - t0))
     log('6/6 Écriture du rapport…')
+    log('Compréhension : musique fine et rôle de chaque élément…')
+    try:
+        import librosa
+        y2 = audio.load(video)
+        M = musique.analyse(librosa.resample(y2.mean(0), orig_sr=44100, target_sr=22050), 22050, voix=so.get('voix_segments_s')) if y2 is not None else None
+    except Exception as ex:
+        M = None; log('  (analyse musicale impossible :', ex, ')')
+    # boucle : la fin ressemble-t-elle au début ? (on revoit la vidéo sans s'en rendre compte)
+    G = S['grays']; lum = [r['luma'] for r in S['rows']]
+    fin = next((k for k in range(NF - 1, NF // 2, -1) if lum[k] > 25), None)
+    if fin is not None and NF > 30:
+        import cv2
+        a_, b_ = G[min(2, NF - 1)].astype(np.float32), G[fin].astype(np.float32)
+        nc = float(cv2.matchTemplate(a_, b_, cv2.TM_CCOEFF_NORMED)[0][0])
+        if nc > 0.75: P['boucle'] = f"la dernière image ressemble à la première ({round(nc * 100)} %) : la vidéo boucle, on la revoit sans s'en rendre compte"
+        elif fin < NF - 0.7 * FPS: P['boucle'] = f"pas de boucle : la vidéo se termine au noir ({round((NF - fin) / FPS, 1)} s) sur la signature ou la fin"
+    roles.annoter(P, M)
     report.write(P, S, out, beat_t)
+    report.planche(P, S, out)
     log(f"Terminé en {P['duree_analyse_s']} s → {out}/pattern.json, rapport.md, timeline.png")
     return P
 
