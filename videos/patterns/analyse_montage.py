@@ -152,17 +152,19 @@ def analyse(video, out='.', quiet=False, cache=None):
         import math as _m
         tr_ = np.array([_m.hypot(r['M'][0][2], r['M'][1][2]) * S['SC'] / W0 * 100 if r.get('M') else 0 for r in S['rows']])
         coupes_ = {round(e['start_s'] * FPS) for e in events}
-        imp = [k for k in range(1, NF - 1) if tr_[k] > 1.2 and tr_[k] >= tr_[k - 1] and tr_[k] >= tr_[k + 1] and all(abs(k - c) > 2 for c in coupes_)]
+        # une secousse = un pic bref (l'image part puis revient) dans une image par ailleurs calme
+        imp = [k for k in range(2, NF - 6) if tr_[k] > 1.2 and tr_[k] >= tr_[k - 1] and tr_[k] >= tr_[k + 1] and all(abs(k - c) > 2 for c in coupes_)
+               and tr_[k] > 3 * np.median(tr_[max(0, k - 12):k + 13]) and min(tr_[k + 2:k + 6]) < 0.4 * tr_[k]]
         sur_t = [k for k in imp if musique.lien(k / FPS, M, tol=0.09) not in (None, 'hors temps')]
         for k in sur_t:
             voisins = [q for q in sur_t if 0 < abs(q - k) <= 3 * FPS]
-            if len(voisins) >= 2 and all(abs(m_['start_s'] - k / FPS) > 0.15 for m_ in P['mouvements'] if m_['type'].startswith('shake')):
-                P['mouvements'].append(dict(type='shake ajouté (sur le temps)', start_s=round(k / FPS, 2), dur_s=round(4 / FPS, 2), amplitude_pct_ecran=round(float(tr_[k]), 1)))
+            if len(voisins) >= 2 and all(abs(m_['start_s'] - k / FPS) > 0.15 for m_ in P['mouvements'] if m_['type'].startswith(('secousse', 'tremblement'))):
+                P['mouvements'].append(dict(type='secousse (shake sur le temps)', start_s=round(k / FPS, 2), dur_s=round(4 / FPS, 2), amplitude_pct_ecran=round(float(tr_[k]), 1), origine='ajouté au montage (sur le temps)'))
         P['mouvements'].sort(key=lambda m_: m_['start_s'])
     for m_ in P['mouvements']:                               # tremblement calé sur la musique = shake ajouté au montage
         if m_['type'] == 'tremblement' and M:
             l_ = musique.lien(m_['start_s'], M)
-            m_['type'] = 'shake ajouté (sur le temps)' if l_ in ('sur le drop', 'sur le premier temps de la mesure', 'sur la grosse caisse', 'sur la caisse claire') and m_['dur_s'] <= 1.5 else 'tremblement (caméra à la main)'
+            m_['origine'] = 'ajouté au montage (sur le temps)' if l_ in ('sur le drop', 'sur le premier temps de la mesure', 'sur la grosse caisse', 'sur la caisse claire') and m_['dur_s'] <= 1.5 else 'caméra à la main'
     log('Effets d\'image (glow, couleurs, stroboscope, miroir…)…')
     P['effets_image'] = effets.detect(S, events)
     roles.annoter(P, M)

@@ -173,7 +173,9 @@ def _trier(S, out, events=None):
             # un texte qui bouge : logo filmé… sauf s'il est grand, n'est pas une marque, et apparaît en cours de plan (texte « tracké » sur le sujet)
             f0_ = round(o['start_s'] * FPS)
             en_cours = not any(0 <= f0_ - c <= step for c in coupes)
-            if o['hauteur_pct'] >= 3 and not est_marque(o['text']) and en_cours and sum(ch.isalnum() for ch in o['text']) >= 2:
+            t_ = o['text'].strip(); mots_ = t_.split()
+            style_ = len(mots_) <= 2 and t_.replace(' ', '').isalpha() and t_.upper() == t_ and len(t_.replace(' ', '')) >= 2
+            if o['hauteur_pct'] >= 3 and not est_marque(t_) and en_cours and style_:
                 o['suit_le_sujet'] = True; garde.append(o); continue
             scene.append(o); scene_fort.append(o); continue   # il suit la caméra : texte filmé (logo, panneau)
         immobile = bool(dep) and np.median(dep) < 0.4                       # parfaitement fixe à l'écran (titre, bandeau) : incrusté
@@ -193,7 +195,7 @@ def _trier(S, out, events=None):
         marques = []
     def marque(t):
         mots = [norm(m) for m in t.split()] + [norm(t)]
-        return any(len(m) >= 3 and (SequenceMatcher(None, m, b).ratio() > 0.75 or (len(b) >= 4 and b in m) or (len(m) >= 4 and len(b) >= 6 and b.startswith(m[:4]))) for m in mots for b in marques if b)
+        return any(len(m) >= 3 and (SequenceMatcher(None, m, b).ratio() > 0.75 or (len(b) >= 4 and b in m) or (len(m) >= 4 and m in b) or (len(m) >= 4 and len(b) >= 6 and b.startswith(m[:4]))) for m in mots for b in marques if b)
     import re
     score_tv = re.compile(r'^(?:[A-Z]{2,4}\s*\d{2,3}|\d{1,3}[:.]\d|\d?(?:1ST|2ND|3RD|4TH|OT)\b)', re.I)
     def habillage_tv(t):                                   # score, chrono, quart-temps d'une retransmission (« LAL 97 3RD », « 104 20.3 »)
@@ -231,6 +233,12 @@ def _trier(S, out, events=None):
                      centre_y_pct=round((q['centre_y_pct'] + o['centre_y_pct']) / 2), dur_s=max(q['dur_s'], o['dur_s']))
         else: bloc.append(o)
     garde2 = bloc
+    # un texte « tracké » doit rester au moins 1 s (en plusieurs lectures) et se déplacer vraiment ; sinon c'est un logo qui passe
+    for o in [x for x in garde2 if x.get('suit_le_sujet')]:
+        meme = [x for x in garde2 if x.get('suit_le_sujet') and norm(x['text']) == norm(o['text'])]
+        duree = max(x['start_s'] + x['dur_s'] for x in meme) - min(x['start_s'] for x in meme)
+        bouge = max(abs(x['centre_x_pct'] - o['centre_x_pct']) + abs(x['centre_y_pct'] - o['centre_y_pct']) for x in meme)
+        if duree < 1.0 or bouge < 8: garde2.remove(o); scene.append(o)
     resume = lambda L: sorted({o['text'] for o in L})[:60]
     return garde2, dict(filigranes=resume(fil), scene=resume(scene))
 
@@ -244,4 +252,4 @@ def est_marque(t):
     except OSError:
         return False
     mots = [norm(m) for m in t.split()] + [norm(t)]
-    return any(len(m) >= 3 and (SequenceMatcher(None, m, b).ratio() > 0.75 or (len(b) >= 4 and b in m) or (len(m) >= 4 and len(b) >= 6 and b.startswith(m[:4]))) for m in mots for b in marques if b)
+    return any(len(m) >= 3 and (SequenceMatcher(None, m, b).ratio() > 0.75 or (len(b) >= 4 and b in m) or (len(m) >= 4 and m in b) or (len(m) >= 4 and len(b) >= 6 and b.startswith(m[:4]))) for m in mots for b in marques if b)

@@ -9,7 +9,7 @@ tx = [c for c in P['sous_titres'] + P['textes_a_l_ecran'] if c.get('suit_le_suje
 add('Texte qui suit le sujet', '« GO » 1,0–5,0 s', ', '.join('« %s » %s s' % (c['text'], c['start_s']) for c in tx) or '—', any('GO' in c['text'].upper() for c in tx))
 k = [e for e in P.get('effets_image', []) if e['type'] == 'kaléidoscope']
 add('Kaléidoscope', '5,0–9,0 s', ', '.join('%s–%s s' % (e['start_s'], e['end_s']) for e in k) or '—', any(e['start_s'] < 9 and e['end_s'] > 5 for e in k))
-sh = [m for m in P['mouvements'] if m['type'] == 'shake ajouté (sur le temps)']
+sh = [m for m in P['mouvements'] if 'ajouté' in (m.get('origine') or '')]
 add('Shake ajouté sur les temps', '9,0–14,0 s', f"{len(sh)} secousses : " + ', '.join(str(m['start_s']) for m in sh[:6]), sum(9 <= m['start_s'] < 14 for m in sh) >= 3)
 cy = (P.get('musique_detaillee') or {}).get('cymbales_inversees', [])
 add('Cymbale inversée avant le drop', '12,5–14,0 s', ', '.join('%s–%s s' % (c['de_s'], c['a_s']) for c in cy) or '—', any(abs(c['a_s'] - 14.0) < 0.3 for c in cy))
