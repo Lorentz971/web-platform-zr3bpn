@@ -1,7 +1,7 @@
 """Plans et mouvements : zooms, rotations, panoramiques, tremblements, vitesse du sujet (ralenti, accéléré,
 accélération progressive), marche arrière, arrêts sur image."""
 import math, os
-import numpy as np
+import numpy as np, cv2
 from .common import runs, smooth, ncc
 
 
@@ -165,5 +165,46 @@ def detect(S, shots, exclude):
                 if ratio < 0.7 or ratio > 1.4:
                     moves.append(dict(type='ralenti' if ratio < 1 else 'accéléré', start_s=T(a + 1 + i + i2), vitesse_avant_px_img=round(v1_, 1),
                                       vitesse_apres_px_img=round(v2_, 1), facteur=round(ratio, 2)))
+    moves += vitesse_image(S, shots)
     moves.sort(key=lambda m: m['start_s'])
     return moves
+
+
+def _vitesse_profil(S, a, b):
+    """Vitesse apparente de l'image, image par image (flux optique dense sur une petite image) :
+    caméra + sujet, en % de la largeur de l'écran par image. Marche même avec du flou de bougé."""
+    G = S['grays']; out = []
+    w = 160; h = max(16, int(round(G[a].shape[0] * w / G[a].shape[1])))
+    prev = cv2.resize(G[a], (w, h), interpolation=cv2.INTER_AREA)
+    for k in range(a + 1, b):
+        cur = cv2.resize(G[k], (w, h), interpolation=cv2.INTER_AREA)
+        fl = cv2.calcOpticalFlowFarneback(prev, cur, None, 0.5, 2, 9, 2, 5, 1.1, 0)
+        mag = np.hypot(fl[..., 0], fl[..., 1])
+        out.append(float(np.percentile(mag, 75)) / w * 100); prev = cur
+    return np.array(out)
+
+
+def vitesse_image(S, shots):
+    """« Velocity » des edits : l'image ralentit fortement puis repart (ou l'inverse) à l'intérieur d'un plan,
+    et vitesse moyenne de chaque plan (pour reproduire l'énergie)."""
+    FPS = S['FPS']; T = lambda f: round(f / FPS, 2); out = []
+    for s in shots:
+        a, b = s['_a'], s['_b']
+        if b - a < 8: continue
+        v = _vitesse_profil(S, a, b)
+        s['vitesse_image_pct_par_image'] = round(float(np.median(v)), 2)
+        if len(v) < 8 or v.max() < 0.6: continue
+        vs = smooth(v, 3); hi = vs.max(); lo = vs.min()
+        if lo > 0.3 * hi: continue
+        lent = vs < 0.35 * hi; rap = vs > 0.7 * hi
+        # suite de phases (lent / rapide) d'au moins 3 images
+        ph = []
+        for i, j in runs(lent): ph.append((i, j, 'lent')) if j - i + 1 >= 3 else None
+        for i, j in runs(rap): ph.append((i, j, 'rapide')) if j - i + 1 >= 2 else None
+        ph.sort()
+        if len(ph) < 2 or len(set(p[2] for p in ph)) < 2: continue
+        forme = ' puis '.join(p[2] for k, p in enumerate(ph) if k == 0 or p[2] != ph[k - 1][2])
+        out.append(dict(type='rampe de vitesse (velocity)', start_s=T(a + 1 + ph[0][0]), dur_s=round((ph[-1][1] - ph[0][0] + 1) / FPS, 2),
+                        forme=forme, vitesse_max_pct=round(float(hi), 2), vitesse_min_pct=round(float(lo), 2), rapport=round(float(hi / max(lo, 0.01)), 1),
+                        profil=[round(float(x), 2) for x in vs]))
+    return out

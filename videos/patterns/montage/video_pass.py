@@ -230,6 +230,66 @@ def describe_line(fr, box, ws):
                 contour=bool(crop.size and (crop < 40).mean() > 0.08 and (crop > 200).mean() > 0.05))
 
 
+try:                                                     # moteur de lecture principal : RapidOCR (modèles PP-OCR, inclus dans le paquet)
+    import threading
+    from rapidocr_onnxruntime import RapidOCR as _RapidOCR
+    _rapid_local = threading.local(); HAS_RAPID = True
+except Exception:
+    HAS_RAPID = False
+
+
+def _rapid():
+    if not hasattr(_rapid_local, 'eng'): _rapid_local.eng = _RapidOCR()
+    return _rapid_local.eng
+
+
+def _rapid_frame(fr, n):
+    """Lecture de toute l'image avec RapidOCR : bien meilleur que Tesseract sur les polices stylisées (contour lumineux,
+    lettres espacées ou abîmées, texte sur image chargée)."""
+    H0, W0 = fr.shape[:2]; k = min(1.0, 960 / max(H0, W0))
+    img = cv2.resize(fr, None, fx=k, fy=k, interpolation=cv2.INTER_AREA) if k < 1 else fr
+    try: res, _ = _rapid()(img)
+    except Exception: res = None
+    pieces = []
+    for pts, txt, sc in res or []:
+        txt = txt.strip(); conf = float(sc) * 100
+        core = ''.join(ch for ch in txt if ch.isalnum())
+        if conf < 60 or len(core) < 2: continue
+        xs = [p[0] / k for p in pts]; ys = [p[1] / k for p in pts]
+        x0, y0, x1, y1 = min(xs), min(ys), max(xs), max(ys)
+        if (y1 - y0) > 0.25 * H0 or (x1 - x0) < 4: continue
+        words = txt.split() or [txt]; tot = sum(len(w) + 1 for w in words); cx = x0
+        for w in words:                                  # position approximative de chaque mot (proportionnelle aux lettres)
+            ww = (x1 - x0) * (len(w) + 1) / tot
+            pieces.append((w, conf, cx, y0, ww * len(w) / (len(w) + 1), y1 - y0)); cx += ww
+    # morceaux d'une même ligne (mots lus séparément) : on les regroupe
+    lines = []
+    for wd in sorted(pieces, key=lambda q: q[2]):
+        x, y, w, h = wd[2:]
+        for L in lines:
+            lx, ly, lw, lh = L[0]
+            if abs((ly + lh / 2) - (y + h / 2)) < 0.45 * max(lh, h) and 0.6 < h / lh < 1.6 and x - (lx + lw) < 1.3 * max(lh, h):
+                x1_, y1_ = min(lx, x), min(ly, y); x2_, y2_ = max(lx + lw, x + w), max(ly + lh, y + h)
+                L[0] = [x1_, y1_, x2_ - x1_, y2_ - y1_]; L[1].append(wd); break
+        else:
+            lines.append([[x, y, w, h], [wd]])
+    from difflib import SequenceMatcher
+    norm = lambda t: ''.join(ch for ch in t.upper() if ch.isalnum())
+    samples = []
+    for (x, y, w, h), ws in lines:
+        bb = (int(x), int(y), int(w), int(h))
+        txt = ' '.join(q[0] for q in ws)
+        if HAS_OCR:                                      # relecture Tesseract : meilleure pour les espaces entre les mots
+            tw = read_band(fr, bb)
+            if tw and np.mean([q[1] for q in tw]) >= 80 and SequenceMatcher(None, norm(txt), norm(' '.join(q[0] for q in tw))).ratio() >= 0.75:
+                ws = [q for q in tw if x - h <= q[2] <= x + w + h] or ws
+        r = describe_line(fr, bb, ws)
+        wl = [sum(ch.isalnum() for ch in q[0]) for q in ws]
+        if r['conf'] >= 70 and (max(wl) >= 3 or len(wl) >= 2):
+            samples.append(dict(f=n, box=bb, moteur='rapidocr', **r))
+    return dict(bands=[], samples=samples)
+
+
 def _ocr_frame(fr, n, full, plan_b):
     """Lecture des textes d'une image (exécutée en parallèle). plan_b : [(boîte, (lecture_précédente, y) ou None)]."""
     H0 = fr.shape[0]
@@ -266,9 +326,9 @@ def scan(video, progress=True):
     OCR_STEP = int(os.environ.get('MONTAGE_OCR_STEP', max(1, round(FPS / 3))))
     FACE = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml') if hasattr(cv2, 'CascadeClassifier') else None
     rows, grays, boxes_all, cap_samples, face_samples = [], [], [], [], []
-    prev_bands, ocr_i, ocr_jobs = [], 0, []
+    prev_bands, ocr_i, ocr_jobs, last_rapid = [], 0, [], None
     from concurrent.futures import ThreadPoolExecutor
-    pool = ThreadPoolExecutor(max_workers=max(1, (os.cpu_count() or 2)))      # Tesseract tourne en parallèle de la lecture des images
+    pool = ThreadPoolExecutor(max_workers=max(1, (os.cpu_count() or 2) // (2 if HAS_RAPID else 1)))   # lecture des textes en parallèle des images
     prev = None; prev_hist = None; n = 0
     total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
     while True:
@@ -357,7 +417,13 @@ def scan(video, progress=True):
             r.update(diff=0, chg=0, hd=0, inl=1, ncc_comp=1, ncc_raw=1, M=None, cover=1.0)
         r.setdefault('mov', np.zeros((0, 4), np.float32)); r.setdefault('mov_frac', 0.0)
         boxes_all.append([])
-        if HAS_OCR and n % OCR_STEP == 0:
+        if HAS_RAPID and n % OCR_STEP == 0:
+            # image presque identique à la précédente lecture : même texte, on ne relit pas
+            if last_rapid is not None and np.abs(g.astype(np.int16) - last_rapid[0]).mean() < 1.5:
+                ocr_jobs.append(('copie', n, last_rapid[1]))
+            else:
+                fut = pool.submit(_rapid_frame, fr, n); last_rapid = (g.astype(np.int16), fut); ocr_jobs.append(fut)
+        elif HAS_OCR and n % OCR_STEP == 0:
             ocr_i += 1
             bands = [tuple(bx_) for bx_ in text_bands(fr)] + [tuple(bx_) for bx_ in text_boxes(fr, W0, H0)]
             full = ocr_i % 3 == 1 or not bands                 # lecture de toute l'image une fois par seconde (textes sans contour)
@@ -383,6 +449,10 @@ def scan(video, progress=True):
                 face_samples.append(dict(f=n, area_pct=0))
         rows.append(r); grays.append(g); prev = g; prev_hist = hist; n += 1
         if progress and n % 150 == 0: print(f'  … {n}/{total} images', flush=True)
-    for fut in ocr_jobs: cap_samples += fut.result()['samples']
+    for fut in ocr_jobs:
+        if isinstance(fut, tuple):                          # copie de la lecture précédente, pour l'image n
+            cap_samples += [dict(s, f=fut[1]) for s in fut[2].result()['samples']]
+        else:
+            cap_samples += fut.result()['samples']
     pool.shutdown()
-    return dict(FPS=FPS, W0=W0, H0=H0, AW=AW, AH=AH, SC=SC, NF=n, OCR_STEP=OCR_STEP if HAS_OCR else 0, video=video, rows=rows, grays=grays, boxes=boxes_all, cap_samples=cap_samples, face_samples=face_samples, has_ocr=HAS_OCR)
+    return dict(FPS=FPS, W0=W0, H0=H0, AW=AW, AH=AH, SC=SC, NF=n, OCR_STEP=OCR_STEP if (HAS_OCR or HAS_RAPID) else 0, video=video, rows=rows, grays=grays, boxes=boxes_all, cap_samples=cap_samples, face_samples=face_samples, has_ocr=HAS_OCR or HAS_RAPID, moteur_ocr='rapidocr' if HAS_RAPID else 'tesseract' if HAS_OCR else None)

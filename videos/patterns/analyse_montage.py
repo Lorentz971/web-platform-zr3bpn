@@ -6,6 +6,7 @@ Usage : python3 analyse_montage.py VIDEO.mp4 [DOSSIER_SORTIE]
 Produit pattern.json (toutes les mesures, réutilisables par les outils d'application), rapport.md et timeline.png.
 """
 import os, sys, time
+from difflib import SequenceMatcher
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from montage import video_pass, transitions, motion, overlays, text, look, audio, structure, report
@@ -26,7 +27,7 @@ def analyse(video, out='.', quiet=False, cache=None):
     events, used = transitions.detect(S)
     shots = motion.make_shots(S, events, used)
     log('3/6 Incrustations, textes, mouvements…')
-    capt, capt_sum, others = text.detect(S)
+    capt, capt_sum, others = text.detect(S, events)
     by_f = {}
     for c in S['cap_samples']:
         st_ = max(3, S.get('OCR_STEP', 3))
@@ -35,7 +36,10 @@ def analyse(video, out='.', quiet=False, cache=None):
     ovl = overlays.progress_bar(S) + overlays.split_and_pip(S, shots)
     cap_txt = [(c['text'], c['start_s']) for c in capt]
     ovl += [o for o in overlays.appearing(S, shots, cap_box, events)          # un sous-titre qui « pop » n'est pas une incrustation
-            if not (o.get('texte') and any(o['texte'] == t and abs(o['start_s'] - t0) < 0.6 for t, t0 in cap_txt))]
+            if not (o.get('texte') and any(o['texte'] == t and abs(o['start_s'] - t0) < 0.6 for t, t0 in cap_txt))
+            and not (o.get('texte') and any(SequenceMatcher(None, o['texte'].upper(), t.upper()).ratio() > 0.75
+                                            for t in (capt_sum.get('textes_de_la_scene') or []) + (capt_sum.get('filigranes') or [])))   # un logo filmé
+            and not (not o.get('texte') and o.get('taille_pct_ecran', 1) < 0.3)]                                                             # trop petit pour être un graphique
     ovl.sort(key=lambda o: o['start_s'])
     def exclude(k):
         rects = list(cap_box(k))

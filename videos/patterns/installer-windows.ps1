@@ -16,6 +16,8 @@ if (Test-Path $tess) {
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 Write-Host "== 2/4 Modules Python"
 py -m pip install --upgrade -r requirements.txt
+py -m pip install --upgrade --no-deps rapidocr_onnxruntime
+py -m pip uninstall -y opencv-python
 Write-Host "== 3/4 Modèles d'écoute (~600 Mo, une seule fois)"
 py telecharger_modeles.py
 Write-Host "== 4/4 Vérification"

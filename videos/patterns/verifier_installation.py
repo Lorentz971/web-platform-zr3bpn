@@ -7,7 +7,7 @@ for exe in ['ffmpeg', 'ffprobe', 'tesseract']:
     if not path and exe == 'tesseract' and os.path.exists(r'C:\Program Files\Tesseract-OCR\tesseract.exe'): path = 'C:/Program Files/Tesseract-OCR'
     print(f"  {'✅' if path else '❌'} {exe}"); ok &= bool(path)
 print('Modules Python :')
-for m in ['cv2', 'numpy', 'scipy', 'librosa', 'pyloudnorm', 'soundfile', 'matplotlib', 'pytesseract', 'PIL', 'skimage', 'sherpa_onnx']:
+for m in ['cv2', 'numpy', 'scipy', 'librosa', 'pyloudnorm', 'soundfile', 'matplotlib', 'pytesseract', 'PIL', 'skimage', 'sherpa_onnx', 'rapidocr_onnxruntime']:
     try: importlib.import_module(m); print(f'  ✅ {m}')
     except Exception: print(f'  ❌ {m}'); ok = False
 try:

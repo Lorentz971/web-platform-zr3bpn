@@ -10,3 +10,8 @@ Pillow
 scikit-image
 sherpa-onnx
 yt-dlp
+onnxruntime
+pyclipper
+PyYAML
+Shapely
+six

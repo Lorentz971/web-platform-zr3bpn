@@ -197,16 +197,18 @@ def appearing(S, shots, caption_boxes, trans=()):
 
 
 def _seam(grays, a, b, layout):
-    """Écran partagé : une frontière nette, fixe, qui traverse toute l'image vers le milieu
-    (sinon ce sont juste des mouvements différents à gauche et à droite)."""
-    ks = list(range(a + 1, b, max(1, (b - a) // 12))); hits = 0
+    """Écran partagé : une frontière nette qui traverse toute l'image vers le milieu, TOUJOURS À LA MÊME PLACE
+    (une rambarde ou un horizon filmés bougent avec la caméra ; la séparation d'un écran partagé, non)."""
+    ks = list(range(a + 1, b, max(1, (b - a) // 12))); pos = []
     for k in ks:
         g = grays[k].astype(np.float32)
         if layout.startswith('gauche'): fr_ = (np.abs(np.diff(g, axis=1)) > 20).mean(axis=0)
         else: fr_ = (np.abs(np.diff(g, axis=0)) > 20).mean(axis=1)
-        n = len(fr_)
-        if fr_[int(n * 0.4):int(n * 0.6)].max() > 0.6: hits += 1
-    return hits >= 0.7 * len(ks)
+        n = len(fr_); lo = int(n * 0.4); i = int(np.argmax(fr_[lo:int(n * 0.6)])) + lo
+        if fr_[i] > 0.6: pos.append(i)
+    if len(pos) < 0.7 * len(ks): return False
+    mode = max(set(pos), key=pos.count)
+    return sum(abs(p - mode) <= 2 for p in pos) >= 0.7 * len(ks)
 
 
 def _grow(b, d): return (b[0] - d, b[1] - d, b[2] + 2 * d, b[3] + 2 * d)
