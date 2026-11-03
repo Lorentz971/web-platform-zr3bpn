@@ -60,8 +60,11 @@ def comparer(ref, nous):
                     rows.append((lab, st_r[k], st_n.get(k), '—', '✅' if ok else '❌', '' if ok else f"réglez : {st_r[k]}"))
     tr_r = set((Rref.get('types_de_transition') or {}).keys()); tr_n = set((N.get('types_de_transition') or {}).keys())
     if tr_r:
-        miss = tr_r - tr_n
-        rows.append(('Types de transition', ', '.join(sorted(tr_r)), ', '.join(sorted(tr_n)) or '—', '—', '✅' if not miss else '❌', ('ajoutez : ' + ', '.join(sorted(miss))) if miss else ''))
+        miss = tr_r - tr_n; extra = tr_n - tr_r - {'transition (autre)'}
+        n_n = sum((N.get('types_de_transition') or {}).values())
+        ok = not extra and (not miss or n_n < len(tr_r))       # une vidéo courte ne peut pas montrer tous les types : on vérifie qu'on n'en invente pas
+        conseil = ('retirez : ' + ', '.join(sorted(extra))) if extra else (('vous pouvez aussi utiliser : ' + ', '.join(sorted(miss))) if miss else '')
+        rows.append(('Types de transition', ', '.join(sorted(tr_r)), ', '.join(sorted(tr_n)) or '—', '—', '✅' if ok else '❌', conseil))
     bar = Rref.get('barre_de_progression')
     if isinstance(bar, str): bar = int(bar.split('/')[0]) * 2 > int(bar.split('/')[1].split()[0])
     if bar: rows.append(('Barre de progression', 'oui', 'oui' if N.get('barre_de_progression') else 'non', '—', '✅' if N.get('barre_de_progression') else '❌', '' if N.get('barre_de_progression') else 'ajoutez une barre de progression'))

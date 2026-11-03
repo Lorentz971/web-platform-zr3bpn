@@ -80,6 +80,31 @@ def _ref(R, k, default):
     v = R.get(k); return default if v is None else v
 
 
+def _decouper(pieces, voulue, beats, caler, duree_max):
+    clips = []; t = 0.0
+    for r, a, b, ws in pieces:
+        if duree_max and t >= duree_max: break
+        pos = a
+        while pos < b - 0.05:
+            want = voulue(t)
+            end = min(b, pos + want)
+            if end < b - 0.3 and ws:
+                gaps = [w['fin'] for w in ws if pos + 0.35 < w['fin'] < b - 0.3]
+                if caler:                                         # parmi les fins de mot, préférer celles qui tombent sur un temps
+                    near = [g for g in gaps if min(abs(t + g - pos - bt) for bt in beats) < 0.06 and abs(g - (pos + want)) < want * 0.6]
+                    gaps = near or gaps
+                if gaps: end = min(gaps, key=lambda g: abs(g - (pos + want)))
+            elif caler and not ws:                                # pas de parole : coupe sur le temps le plus proche
+                bt = min(beats, key=lambda x: abs(x - (t + want))); end = min(b, pos + max(0.3, bt - t))
+            if b - end < 0.35: end = b
+            if duree_max: end = min(end, pos + (duree_max - t))
+            clips.append(dict(src=r['chemin'], nom=r['nom'], role=r['role'], src_in=round(pos, 3), src_out=round(end, 3), t0=round(t, 3), t1=round(t + end - pos, 3),
+                              mots=[w for w in ws if pos <= w['t'] < end], debut_de_piece=pos == a))
+            t += end - pos; pos = end
+            if duree_max and t >= duree_max - 1e-3: break
+    return clips, t
+
+
 def construire(P, rushes, musique=None, duree_max=None, format_=None, graine=0, log=print):
     """P : pattern.json ou style.json (agreger.py). rushes : liste de chemins. Renvoie le plan de montage (dict)."""
     rng = np.random.default_rng(graine)
@@ -139,28 +164,16 @@ def construire(P, rushes, musique=None, duree_max=None, format_=None, graine=0, 
     bpm, beats = _beats(musique) if musique else (None, [])
     caler = bool(beats) and _ref(R, 'coupes_sur_le_temps_pct', 0) >= 50
 
-    # 3) découpe en plans aux frontières de mots (jamais au milieu d'un mot), ou sur les temps de la musique
-    clips = []; t = 0.0
-    for r, a, b, ws in pieces:
-        if duree_max and t >= duree_max: break
-        pos = a
-        while pos < b - 0.05:
-            want = duree_voulue(t)
-            end = min(b, pos + want)
-            if end < b - 0.3 and ws:
-                gaps = [w['fin'] for w in ws if pos + 0.35 < w['fin'] < b - 0.3]
-                if caler:                                         # parmi les fins de mot, préférer celles qui tombent sur un temps
-                    near = [g for g in gaps if min(abs(t + g - pos - bt) for bt in beats) < 0.06 and abs(g - (pos + want)) < want * 0.6]
-                    gaps = near or gaps
-                if gaps: end = min(gaps, key=lambda g: abs(g - (pos + want)))
-            elif caler and not ws:                                # pas de parole : coupe sur le temps le plus proche
-                bt = min(beats, key=lambda x: abs(x - (t + want))); end = min(b, pos + max(0.3, bt - t))
-            if b - end < 0.35: end = b
-            if duree_max: end = min(end, pos + (duree_max - t))
-            clips.append(dict(src=r['chemin'], nom=r['nom'], role=r['role'], src_in=round(pos, 3), src_out=round(end, 3), t0=round(t, 3), t1=round(t + end - pos, 3),
-                              mots=[w for w in ws if pos <= w['t'] < end], debut_de_piece=pos == a))
-            t += end - pos; pos = end
-            if duree_max and t >= duree_max - 1e-3: break
+    # 3) découpe en plans aux frontières de mots (jamais au milieu d'un mot), ou sur les temps de la musique.
+    #    On recommence avec des plans plus longs ou plus courts tant que le nombre de plans par minute s'écarte du pattern.
+    cible_ppm = _ref(R, 'plans_par_minute', None)
+    echelle = 1.0
+    for essai in range(6):
+        rng = np.random.default_rng(graine)
+        clips, t = _decouper(pieces, lambda t_: duree_voulue(t_) * echelle, beats, caler, duree_max)
+        ppm = len(clips) / max(t, 1e-6) * 60
+        if not cible_ppm or abs(ppm - cible_ppm) <= 0.12 * cible_ppm: break
+        echelle *= float(np.clip(ppm / cible_ppm, 0.5, 2.0))
     duree = round(t, 3)
     log(f'  {len(clips)} plans, {duree:.1f} s de montage')
 

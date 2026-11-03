@@ -19,6 +19,9 @@ def detect(S):
     rbs = np.array([abs(r['rb_shift']) for r in rows])
     tx = np.array([abs(r['M'][0][2]) * S['SC'] if r['M'] else 0 for r in rows]); cover = np.array([r.get('cover', 1.0) for r in rows])
     flash = (luma > 225) & (cstd < 15); black = (luma < 18) & (cstd < 10)
+    # flash sous des sous-titres ou un logo restés par-dessus : image d'un coup beaucoup plus claire que ses voisines
+    lmed = np.array([np.median(np.r_[luma[max(0, k - 6):max(0, k - 1)], luma[k + 2:k + 7]]) if NF > 3 else luma[k] for k in range(NF)])
+    flash |= (luma > 200) & (luma - lmed > 60) & (cstd < 80)
     calm = lambda k: 0 <= k < NF and abs(sc[k] - 1) < 0.006
     brk = np.zeros(NF, bool); reframe = {}
     for k in range(1, NF):

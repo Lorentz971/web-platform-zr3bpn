@@ -3,6 +3,7 @@ import math, os, shutil
 import numpy as np, cv2
 from .common import ncc
 
+os.environ.setdefault('OMP_THREAD_LIMIT', '1')          # Tesseract plus rapide sur une seule tâche à la fois
 try:
     import pytesseract
     if not shutil.which('tesseract'):
@@ -13,6 +14,25 @@ try:
     HAS_OCR = True
 except Exception:
     HAS_OCR = False; OCR_LANG = 'eng'
+
+
+_VIDE = dict(text=[], conf=[], left=[], top=[], width=[], height=[])
+
+
+def _ocr(img, cfg, timeout=4):
+    """Lecture Tesseract avec garde-fous : image limitée en taille, 5 s maximum (une image bruitée peut le bloquer longtemps)."""
+    h, w = img.shape[:2]
+    if w > 2400:
+        k = 2400 / w; img = cv2.resize(img, None, fx=k, fy=k, interpolation=cv2.INTER_AREA)
+        sc = 1 / k
+    else: sc = 1.0
+    try:
+        d = pytesseract.image_to_data(img, lang=OCR_LANG, config=cfg, output_type=pytesseract.Output.DICT, timeout=timeout)
+    except RuntimeError:
+        return dict(_VIDE)
+    if sc != 1.0:
+        for key in ('left', 'top', 'width', 'height'): d[key] = [int(v * sc) for v in d[key]]
+    return d
 
 
 def estimate(pg, cg):
@@ -47,6 +67,39 @@ def estimate(pg, cg):
     return res
 
 
+def text_bands(fr):
+    """Repérage rapide des lignes de texte incrustées : lettres claires bordées de sombre (contour, ombre)
+    ou très contrastées sur leur fond. Renvoie des boîtes (x, y, l, h) en pixels de l'image d'origine."""
+    H0, W0 = fr.shape[:2]; k = min(1.0, 960 / max(H0, W0))
+    sm = cv2.resize(fr, None, fx=k, fy=k, interpolation=cv2.INTER_AREA) if k < 1 else fr
+    mx = sm.max(axis=2); mn = sm.min(axis=2); h, w = mx.shape
+    bright = (mx > 170) & (mn > 120)
+    dark = (mx < 70).astype(np.uint8)
+    stroke = bright & (cv2.dilate(dark, np.ones((5, 5), np.uint8)) > 0)
+    loc = cv2.blur(mx, (41, 41)).astype(np.int16)
+    contrast = bright & (mx.astype(np.int16) - loc > 70)
+    out = []
+    for m in (stroke, contrast):
+        m = m.astype(np.uint8)
+        n, lab, st, _ = cv2.connectedComponentsWithStats(cv2.dilate(m, np.ones((3, 3), np.uint8)))
+        comps = [st[i] for i in range(1, n) if 0.012 * h < st[i][3] < 0.12 * h and st[i][2] < 0.6 * w and st[i][4] > 0.15 * st[i][2] * st[i][3]]
+        lines = []
+        for c in sorted(comps, key=lambda c: c[0]):
+            x, y, cw, ch = c[:4]
+            for L in lines:
+                if abs((L[1] + L[3] / 2) - (y + ch / 2)) < 0.35 * max(L[3], ch) and x - (L[0] + L[2]) < 1.2 * max(L[3], ch) and 0.5 < ch / L[4] < 2:
+                    x1, y1 = min(L[0], x), min(L[1], y); x2, y2 = max(L[0] + L[2], x + cw), max(L[1] + L[3], y + ch)
+                    L[:4] = [x1, y1, x2 - x1, y2 - y1]; L[5] += 1; break
+            else:
+                lines.append([x, y, cw, ch, ch, 1])
+        out += [L for L in lines if L[5] >= 3 and L[2] > 1.5 * L[3]]
+    res = []
+    for L in sorted(out, key=lambda L: -L[5]):
+        b = (int(L[0] / k), int(L[1] / k), int(L[2] / k), int(L[3] / k))
+        if not any(abs((b[1] + b[3] / 2) - (r[1] + r[3] / 2)) < 0.5 * max(b[3], r[3]) for r in res): res.append(b)
+    return res[:6]
+
+
 def text_boxes(bgr, W0, H0):
     g = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
     grad = cv2.morphologyEx(g, cv2.MORPH_GRADIENT, np.ones((3, 3), np.uint8))
@@ -76,7 +129,7 @@ def ocr_box(bgr, box):
     best = None
     for inv in (True, False):                                   # texte clair sur fond sombre, puis l'inverse
         _, b1 = cv2.threshold(mx, 170 if inv else 110, 255, cv2.THRESH_BINARY_INV if inv else cv2.THRESH_BINARY)
-        d = pytesseract.image_to_data(b1, lang=OCR_LANG, config='--psm 7', output_type=pytesseract.Output.DICT)
+        d = _ocr(b1, '--psm 7')
         words = [(d['text'][i].strip(), int(float(d['conf'][i])), d['left'][i] // 2, d['width'][i] // 2) for i in range(len(d['text'])) if d['text'][i].strip()]
         words = [w for w in words if w[1] > 55 and sum(ch.isalnum() for ch in w[0]) >= max(1, len(w[0]) // 2)]
         if words and (best is None or sum(w[1] for w in words) > sum(w[1] for w in best)): best = words
@@ -99,11 +152,11 @@ def ocr_box(bgr, box):
 def find_text_lines(fr):
     """Repère et lit les mots dans toute l'image (Tesseract, mode « texte épars », sur deux versions de l'image),
     puis les regroupe en lignes. Renvoie [(boîte, [(mot, confiance, x, y, l, h), …]), …]."""
-    H0, W0 = fr.shape[:2]; k = min(1.0, 960 / max(H0, W0))
+    H0, W0 = fr.shape[:2]; k = min(1.0, 800 / max(H0, W0))
     small = cv2.resize(fr, None, fx=k, fy=k) if k < 1 else fr
     words = []
     for img in (small.max(axis=2), cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)):
-        d = pytesseract.image_to_data(img, lang=OCR_LANG, config='--psm 11', output_type=pytesseract.Output.DICT)
+        d = _ocr(img, '--psm 11', timeout=3)
         for i in range(len(d['text'])):
             t = d['text'][i].strip(); c = float(d['conf'][i])
             if not t or c < 70: continue
@@ -147,7 +200,7 @@ def read_band(fr, box):
             if ar > 20 and 0.4 * mh < bh < 1.8 * mh and by > 0 and by + bh < m.shape[0]: keep[i] = True
         mm = keep[lab].astype(np.uint8)
         img = cv2.resize(255 - mm * 255, None, fx=2, fy=2, interpolation=cv2.INTER_NEAREST)
-        d = pytesseract.image_to_data(img, lang=OCR_LANG, config='--psm 7', output_type=pytesseract.Output.DICT)
+        d = _ocr(img, '--psm 7')
         ws = []
         for i in range(len(d['text'])):
             t = d['text'][i].strip(); c = float(d['conf'][i])
@@ -177,6 +230,34 @@ def describe_line(fr, box, ws):
                 contour=bool(crop.size and (crop < 40).mean() > 0.08 and (crop > 200).mean() > 0.05))
 
 
+def _ocr_frame(fr, n, full, plan_b):
+    """Lecture des textes d'une image (exécutée en parallèle). plan_b : [(boîte, (lecture_précédente, y) ou None)]."""
+    H0 = fr.shape[0]
+    cands = [(b, [], reuse) for b, reuse in plan_b]
+    if full: cands = [(b, ws, None) for b, ws in find_text_lines(fr)] + cands
+    seen, bands_out, samples = [], [], []
+    for b, ws, reuse in sorted(cands, key=lambda q: -q[0][3]):
+        yc = b[1] + b[3] / 2
+        if any(abs(yc - z) < 0.6 * b[3] for z in seen): continue
+        seen.append(yc)
+        if reuse is not None:
+            prev = reuse[0].result()['bands']
+            ws2 = next((w for y, w in prev if abs(y - reuse[1]) < 1), None)
+            if ws2 is None: ws2 = read_band(fr, b) or ws
+        else:
+            ws2 = read_band(fr, b) or ws
+        bands_out.append((yc, ws2))
+        if ws2 and not ws and reuse is None and np.mean([w_[1] for w_ in ws2]) < 75: ws2 = []   # zone trouvée par la forme seule : lecture sûre exigée
+        if ws2:
+            xs = [w_[2] for w_ in ws2]; ys = [w_[3] for w_ in ws2]
+            bb = (int(min(xs)), int(min(ys)), int(max(w_[2] + w_[4] for w_ in ws2) - min(xs)), int(max(w_[3] + w_[5] for w_ in ws2) - min(ys)))
+            res = describe_line(fr, bb, ws2)
+            wl = [sum(ch.isalnum() for ch in t) for t, *_ in ws2]
+            plausible = res['conf'] >= 80 and (max(wl) >= 4 or (max(wl) >= 3 and res['conf'] >= 88) or (min(wl) >= 2 and res['conf'] >= 90 and len(wl) >= 2))
+            if plausible: samples.append(dict(f=n, box=bb, **res))
+    return dict(bands=bands_out, samples=samples)
+
+
 def scan(video, progress=True):
     cap = cv2.VideoCapture(video)
     FPS = cap.get(cv2.CAP_PROP_FPS) or 30
@@ -185,6 +266,9 @@ def scan(video, progress=True):
     OCR_STEP = int(os.environ.get('MONTAGE_OCR_STEP', max(1, round(FPS / 3))))
     FACE = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml') if hasattr(cv2, 'CascadeClassifier') else None
     rows, grays, boxes_all, cap_samples, face_samples = [], [], [], [], []
+    prev_bands, ocr_i, ocr_jobs = [], 0, []
+    from concurrent.futures import ThreadPoolExecutor
+    pool = ThreadPoolExecutor(max_workers=max(1, (os.cpu_count() or 2)))      # Tesseract tourne en parallèle de la lecture des images
     prev = None; prev_hist = None; n = 0
     total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
     while True:
@@ -274,22 +358,21 @@ def scan(video, progress=True):
         r.setdefault('mov', np.zeros((0, 4), np.float32)); r.setdefault('mov_frac', 0.0)
         boxes_all.append([])
         if HAS_OCR and n % OCR_STEP == 0:
-            seen = []
-            cands = find_text_lines(fr) + [(tuple(bx_), []) for bx_ in text_boxes(fr, W0, H0)]
-            for b, ws in sorted(cands, key=lambda q: -q[0][3]):
+            ocr_i += 1
+            bands = [tuple(bx_) for bx_ in text_bands(fr)] + [tuple(bx_) for bx_ in text_boxes(fr, W0, H0)]
+            full = ocr_i % 3 == 1 or not bands                 # lecture de toute l'image une fois par seconde (textes sans contour)
+            plan_b, sigs = [], []
+            for b in sorted(bands, key=lambda q: -q[3]):
                 yc = b[1] + b[3] / 2
-                if any(abs(yc - z) < 0.6 * b[3] for z in seen): continue
-                seen.append(yc)
-                ws2 = read_band(fr, b) or ws
-                if ws2 and not ws and np.mean([w_[1] for w_ in ws2]) < 75: ws2 = []       # zone trouvée par la forme seule : lecture sûre exigée
-                if ws2:
-                    xs = [w_[2] for w_ in ws2]; ys = [w_[3] for w_ in ws2]
-                    bb = (int(min(xs)), int(min(ys)), int(max(w_[2] + w_[4] for w_ in ws2) - min(xs)), int(max(w_[3] + w_[5] for w_ in ws2) - min(ys)))
-                    res = describe_line(fr, bb, ws2)
-                    wl = [sum(ch.isalnum() for ch in t) for t, *_ in ws2]
-                    plausible = res['conf'] >= 80 and (max(wl) >= 4 or (max(wl) >= 3 and res['conf'] >= 88) or (min(wl) >= 2 and res['conf'] >= 90 and len(wl) >= 2))
-                    if plausible: cap_samples.append(dict(f=n, box=bb, **res))
-        if n % 3 == 0 and FACE is not None:
+                if any(abs(yc - z[0]) < 0.6 * b[3] for z in sigs): continue
+                y0b, y1b = max(0, int(b[1] - .5 * b[3])), min(H0, int(b[1] + 1.5 * b[3]))
+                sig = cv2.resize((fr[y0b:y1b].max(axis=2) > 170).astype(np.uint8), (160, 16), interpolation=cv2.INTER_AREA).astype(np.float32)
+                hit = next((q for q in prev_bands if abs(q[0] - yc) < 0.3 * b[3] and np.abs(q[1] - sig).mean() < 0.04), None)
+                sigs.append((yc, sig)); plan_b.append((b, (hit[2], hit[0]) if hit else None))   # même texte qu'avant : on ne relit pas
+            fut = pool.submit(_ocr_frame, fr, n, full, plan_b)
+            prev_bands = [(yc, sig, fut) for yc, sig in sigs]
+            ocr_jobs.append(fut)
+        if n % 6 == 0 and FACE is not None:
             faces = FACE.detectMultiScale(g, 1.1, 8, minSize=(int(AW * .06), int(AW * .06)))
             ycc = cv2.cvtColor(small, cv2.COLOR_BGR2YCrCb)
             faces = [q for q in faces if (cv2.inRange(ycc[q[1]:q[1] + q[3], q[0]:q[0] + q[2]], (0, 135, 85), (255, 175, 130)) > 0).mean() > 0.3]
@@ -300,4 +383,6 @@ def scan(video, progress=True):
                 face_samples.append(dict(f=n, area_pct=0))
         rows.append(r); grays.append(g); prev = g; prev_hist = hist; n += 1
         if progress and n % 150 == 0: print(f'  … {n}/{total} images', flush=True)
+    for fut in ocr_jobs: cap_samples += fut.result()['samples']
+    pool.shutdown()
     return dict(FPS=FPS, W0=W0, H0=H0, AW=AW, AH=AH, SC=SC, NF=n, OCR_STEP=OCR_STEP if HAS_OCR else 0, video=video, rows=rows, grays=grays, boxes=boxes_all, cap_samples=cap_samples, face_samples=face_samples, has_ocr=HAS_OCR)

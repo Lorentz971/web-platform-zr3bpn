@@ -15,8 +15,12 @@ def progress_bar(S):
     NF, W0, FPS = S['NF'], S['W0'], S['FPS']
     out = []
     for side in ('haut', 'bas'):
-        L = np.array([r['strip'][side] for r in S['rows']], float)
-        if NF < 30 or L.max() < 0.5 * W0: continue
+        L0 = np.array([r['strip'][side] for r in S['rows']], float)
+        if NF < 30 or L0.max() < 0.5 * W0: continue
+        # la barre ne fait que grandir : un fond coloré qui la prolonge par moments ne peut que surestimer sa longueur,
+        # on garde donc le minimum de ce qui reste à venir
+        L = np.minimum.accumulate(L0[::-1])[::-1]
+        if np.mean(np.abs(L0 - L) < 0.03 * W0) < 0.5: continue
         t = np.arange(NF)
         c = np.corrcoef(t, L)[0, 1] if L.std() > 0 else 0
         if c > 0.97 and L[: max(1, NF // 20)].mean() < 0.2 * W0 and L[-max(1, NF // 20):].mean() > 0.8 * W0:
@@ -33,7 +37,7 @@ def split_and_pip(S, shots):
         hv = [rows[k].get('halves') for k in range(a + 1, b)]
         for key1, key2, layout in [('g', 'd', 'gauche / droite'), ('h', 'b', 'haut / bas')]:
             diffs = [math.hypot(h[key1][0] - h[key2][0], h[key1][1] - h[key2][1]) for h in hv if h and h[key1] and h[key2]]
-            if len(diffs) > 0.6 * len(hv) and np.median(diffs) > 2.0:
+            if len(diffs) > 0.6 * len(hv) and np.median(diffs) > 2.0 and _seam(S['grays'], a, b, layout):
                 s['split'] = layout
                 found.append(dict(type='écran partagé', disposition=layout, start_s=s['start_s'], end_s=s['end_s']))
                 break
@@ -59,7 +63,7 @@ def split_and_pip(S, shots):
     return found
 
 
-def appearing(S, shots, caption_boxes):
+def appearing(S, shots, caption_boxes, trans=()):
     """Éléments graphiques qui entrent, restent fixes à l'écran, puis sortent."""
     rows, grays, FPS, W0, H0, AW, AH, SC = S['rows'], S['grays'], S['FPS'], S['W0'], S['H0'], S['AW'], S['AH'], S['SC']
     T = lambda f: round(f / FPS, 2)
@@ -112,6 +116,8 @@ def appearing(S, shots, caption_boxes):
             k0, k1 = e['start'], e['boxes'][-1][0]; L = k1 - k0 + 1
             if dbg: print('EP', T(k0), T(k1), L, [(q, tuple(int(v) for v in bb)) for q, bb in e['boxes']][:12])
             if L > 18: continue                                   # mouvement continu : un sujet, pas une incrustation
+            if k0 < a + 1 or k1 > b - 2: continue                 # collé à une coupe : c'est le changement de plan
+            if any(e.get('dur_frames') and e['start_s'] * FPS - 3 <= k1 and k0 <= e['start_s'] * FPS + e['dur_frames'] + 3 for e in trans): continue   # pendant une transition
             fx, fy, fw, fh = e['boxes'][-1][1]
             after = range(k1 + 2, min(b, k1 + 10))
             if len(after) < 3 and k1 + 2 < b - 1: continue
@@ -133,6 +139,11 @@ def appearing(S, shots, caption_boxes):
             if len(xs_) > 20:                                     # boîte finale de l'élément = ce qui diffère entre avant et après
                 fx, fy = int(np.percentile(xs_, 1)), int(np.percentile(ys_, 1)); fw, fh = int(np.percentile(xs_, 99)) - fx + 1, int(np.percentile(ys_, 99)) - fy + 1
             M_ = sub[fy:fy + fh, fx:fx + fw]
+            if M_.size and M_.mean() < 0.2: continue                 # rien n'a changé durablement à cet endroit (un objet qui passe)
+            kl = min(b - 1, ka + 10)                                 # une incrustation reste fixe à l'écran ; un objet lent, non
+            if kl > ka and M_.size and M_.any():
+                dd = cv2.absdiff(grays[kl], grays[ka])[fy:fy + fh, fx:fx + fw][M_ > 0]
+                if dd.size and np.median(dd) > 6: continue
             contrast_before = float(before[fy:fy + fh, fx:fx + fw].std()); contrast_after = float(aft[fy:fy + fh, fx:fx + fw].std())
             moved = math.hypot(cxs[-1] - cxs[0], cys[-1] - cys[0]) > 0.15 * min(AW, AH)
             if moved:
@@ -187,6 +198,19 @@ def appearing(S, shots, caption_boxes):
                               duree_entree_images=e['k1'] - e['k0'] + 1, position=_pos_name(cx, cy), centre_pct=[round(cx), round(cy)],
                               taille_pct_ecran=round(fw * fh / (AW * AH) * 100, 1), texte=txt[0]['text'] if txt else None))
     return found
+
+
+def _seam(grays, a, b, layout):
+    """Écran partagé : une frontière nette, fixe, qui traverse toute l'image vers le milieu
+    (sinon ce sont juste des mouvements différents à gauche et à droite)."""
+    ks = list(range(a + 1, b, max(1, (b - a) // 12))); hits = 0
+    for k in ks:
+        g = grays[k].astype(np.float32)
+        if layout.startswith('gauche'): fr_ = (np.abs(np.diff(g, axis=1)) > 20).mean(axis=0)
+        else: fr_ = (np.abs(np.diff(g, axis=0)) > 20).mean(axis=1)
+        n = len(fr_)
+        if fr_[int(n * 0.4):int(n * 0.6)].max() > 0.6: hits += 1
+    return hits >= 0.7 * len(ks)
 
 
 def _grow(b, d): return (b[0] - d, b[1] - d, b[2] + 2 * d, b[3] + 2 * d)

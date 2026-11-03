@@ -26,6 +26,17 @@ sys.path.insert(0, HERE)
 from montage import plan as planif, exports, sfx_lib
 
 
+def _gain_lufs(path, cible):
+    try:
+        import pyloudnorm, soundfile, tempfile
+        tmp = tempfile.mktemp(suffix='.wav')
+        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', path, '-vn', '-ac', '2', '-ar', '48000', tmp], check=True)
+        y, sr = soundfile.read(tmp); os.remove(tmp)
+        return float(max(-20, min(20, cible - pyloudnorm.Meter(sr).integrated_loudness(y))))
+    except Exception:
+        return 0.0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('pattern'); ap.add_argument('rushs', nargs='+')
@@ -62,7 +73,9 @@ def main():
                        + ([f'--browser-executable={a.navigateur}'] if a.navigateur else []), cwd=rdir, check=True)
         brut = os.path.join(rdir, 'out', 'montage.mp4'); video = os.path.join(out, 'montage.mp4')
         L = plan['volume_cible_lufs']                       # volume général calé sur celui du pattern
-        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', brut, '-c:v', 'copy', '-af', f'loudnorm=I={L}:TP=-1.0:LRA=11', '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', video], check=True)
+        gain = _gain_lufs(brut, L)                         # gain exact mesuré (pyloudnorm), puis limiteur pour éviter la saturation
+        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', brut, '-c:v', 'copy', '-af', f'volume={gain:.2f}dB,alimiter=limit=0.89',
+                        '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', video], check=True)
         print(f'Vidéo rendue : {video} (volume normalisé à {L} LUFS)')
         print('Boucle de conformité : ré-analyse de notre montage…')
         subprocess.run([sys.executable, os.path.join(HERE, 'analyse_montage.py'), video, os.path.join(out, 'analyse-du-rendu')], check=True)

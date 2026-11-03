@@ -46,7 +46,7 @@ const entree = (typ: string, n: number, local: number, W: number): React.CSSProp
   switch (typ) {
     case 'fondu enchaîné': return {opacity: p};
     case 'glissement': return {transform: `translateX(${(1 - e) * W}px)`};
-    case 'panoramique filé': return {transform: `translateX(${(1 - e) * W}px)`, filter: `blur(${Math.sin(Math.PI * p) * 18}px)`};
+    case 'panoramique filé': return {transform: `translateX(${(1 - e) * W}px)`, _mb: Math.sin(Math.PI * p) * 60} as any;   // flou dans le sens du mouvement
     case 'zoom de transition': return {transform: `scale(${1.8 - 0.8 * e})`, opacity: Math.min(1, p * 3), filter: `blur(${(1 - e) * 14}px)`};
     case 'rotation de transition': return {transform: `rotate(${(1 - e) * 90}deg) scale(${1 + (1 - e) * 0.5})`};
     case 'rideau': return {clipPath: `inset(0 ${(1 - p) * 100}% 0 0)`};
@@ -59,7 +59,7 @@ const entree = (typ: string, n: number, local: number, W: number): React.CSSProp
 const sortie = (typ: string, n: number, k: number, W: number): React.CSSProperties => {
   const p = Math.min(1, Math.max(0, k / Math.max(1, n))); const e = Easing.out(Easing.cubic)(p);
   if (typ === 'glissement') return {transform: `translateX(${-e * W}px)`};
-  if (typ === 'panoramique filé') return {transform: `translateX(${-e * W}px)`, filter: `blur(${Math.sin(Math.PI * p) * 18}px)`};
+  if (typ === 'panoramique filé') return {transform: `translateX(${-e * W}px)`, _mb: Math.sin(Math.PI * p) * 60} as any;
   if (typ === 'zoom de transition') return {transform: `scale(${1 + e * 0.8})`, filter: `blur(${e * 14}px)`};
   return {};
 };
@@ -77,7 +77,11 @@ const Plan: React.FC<{clip: Clip; idx: number; muted?: boolean; handle: number}>
   if (tn && hn > 0 && fg >= F(nxt!.t0) - hn) st = {...st, ...sortie(tn.type, hn, fg - (F(nxt!.t0) - hn), width)};
   const z = zoomAt(clip, idx, fg);
   return (
-    <AbsoluteFill style={{overflow: 'hidden', ...st}}>
+    <AbsoluteFill style={{overflow: 'hidden', ...st, ...((st as any)._mb > 0.5 ? {filter: `url(#mb${idx})`} : {})}}>
+      {(st as any)._mb > 0.5 ? (
+        <svg width="0" height="0" style={{position: 'absolute'}}><filter id={`mb${idx}`} x="-10%" y="0" width="120%" height="100%">
+          <feGaussianBlur stdDeviation={`${(st as any)._mb} 0`} /></filter></svg>
+      ) : null}
       <AbsoluteFill style={{transform: `scale(${z})`, ...grade()}}>
         <OffthreadVideo src={media(clip.nom)} startFrom={Math.max(0, F(clip.src_in) - handle)} muted={muted}
           style={{width: '100%', height: '100%', objectFit: 'cover'}} />

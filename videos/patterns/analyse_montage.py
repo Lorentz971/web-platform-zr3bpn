@@ -14,7 +14,7 @@ from montage import video_pass, transitions, motion, overlays, text, look, audio
 def analyse(video, out='.', quiet=False, cache=None):
     os.makedirs(out, exist_ok=True); t0 = time.time()
     import pickle
-    log = (lambda *a: None) if quiet else (lambda *a: print(*a, flush=True))
+    log = (lambda *a: None) if quiet else (lambda *a: print(f'[{time.time() - t0:5.0f} s]', *a, flush=True))
     log('1/6 Lecture de la vidéo image par image…')
     if cache and os.path.exists(cache + '.scan.pkl'): S = pickle.load(open(cache + '.scan.pkl', 'rb'))
     else:
@@ -34,7 +34,7 @@ def analyse(video, out='.', quiet=False, cache=None):
     cap_box = lambda k: by_f.get(k, [])                     # seulement les textes confirmés par l'OCR
     ovl = overlays.progress_bar(S) + overlays.split_and_pip(S, shots)
     cap_txt = [(c['text'], c['start_s']) for c in capt]
-    ovl += [o for o in overlays.appearing(S, shots, cap_box)          # un sous-titre qui « pop » n'est pas une incrustation
+    ovl += [o for o in overlays.appearing(S, shots, cap_box, events)          # un sous-titre qui « pop » n'est pas une incrustation
             if not (o.get('texte') and any(o['texte'] == t and abs(o['start_s'] - t0) < 0.6 for t, t0 in cap_txt))]
     ovl.sort(key=lambda o: o['start_s'])
     def exclude(k):
