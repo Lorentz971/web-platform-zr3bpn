@@ -199,6 +199,7 @@ def _trier(S, out, events=None):
     garde2.sort(key=lambda o: o['start_s']); fus = []
     for o in garde2:
         p_ = next((q for q in reversed(fus) if abs(q['centre_y_pct'] - o['centre_y_pct']) <= 4 and o['start_s'] <= q['start_s'] + q['dur_s'] + 0.4
+                   and min(len(norm(o['text'])), len(norm(q['text']))) >= 4                     # « IS » après « THIS » : deux mots différents
                    and (norm(o['text']) in norm(q['text']) or norm(q['text']) in norm(o['text']) or sim(o['text'], q['text']) > 0.7)), None)
         if p_:
             fin = max(p_['start_s'] + p_['dur_s'], o['start_s'] + o['dur_s'])
