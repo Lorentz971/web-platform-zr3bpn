@@ -161,13 +161,15 @@ def _trier(S, out, events=None):
     for o in out:
         t = o['text'].strip(); tl = t.lower()
         z = zones[(round(o['centre_x_pct'] / 6), round(o['centre_y_pct'] / 6))]
-        same = [x for x in z if x['text'].upper()[:3] == t.upper()[:3]]
-        recurrent = (len(z) >= 2 and sum(x['dur_s'] for x in z) > 0.3 * dur and len(set(x['text'] for x in z)) <= 3) or len(same) >= 4
+        nt = ''.join(ch for ch in t.upper() if ch.isalnum())
+        same = [x for x in z if ''.join(ch for ch in x['text'].upper() if ch.isalnum()) == nt]
+        etale = lambda L: (max(x['start_s'] for x in L) - min(x['start_s'] for x in L)) > 0.3 * dur   # présent du début à la fin
+        recurrent = (len(z) >= 2 and sum(x['dur_s'] for x in z) > 0.3 * dur and len(set(x['text'] for x in z)) <= 3 and etale(z)) or (len(same) >= 4 and etale(same))
         if t.startswith('@') or 'tiktok' in tl.replace(' ', '') or 'capcut' in tl or recurrent:
             fil.append(o); continue
-        dep = [v for f in sorted({o['_f0'], (o['_f0'] + o['_f1']) // 2, o['_f1']}) for v in _deplacement(S, o['_box'], f)]
+        dep = [v for f in sorted({(o['_f0'] + o['_f1']) // 2, o['_f1']}) for v in _deplacement(S, o['_box'], f)]   # texte complet (pas pendant qu'il s'écrit)
         if dep and np.median(dep) > 1.5: scene.append(o); scene_fort.append(o); continue   # il suit la caméra : texte filmé (logo, panneau)
-        if cale_sur_le_plan(o): scene.append(o); continue
+        if o['animation'] == 'apparition sèche' and cale_sur_le_plan(o): scene.append(o); continue   # un texte animé est forcément incrusté
         garde.append(o)
     # un même mot qui revient à plusieurs endroits différents de l'image = un logo dans la scène
     from collections import Counter
@@ -182,7 +184,7 @@ def _trier(S, out, events=None):
         k = o['text'].upper().replace(' ', '')
         if cnt[k] >= 3 and len(pos[k]) >= 3: scene.append(o)
         elif any(sim(o['text'], x['text']) > 0.8 for x in scene_fort): scene.append(o)   # même mot que des logos filmés ailleurs
-        elif any(sim(o['text'], x['text']) > 0.8 for x in fil): fil.append(o)
+        elif any(sim(o['text'], x['text']) > 0.8 or (len(norm(o['text'])) >= 3 and norm(o['text']) in norm(x['text'])) for x in fil): fil.append(o)
         else: garde2.append(o)
     # même texte lu deux fois à la suite (lecture partielle) : on garde la lecture la plus complète
     garde2.sort(key=lambda o: o['start_s']); fus = []

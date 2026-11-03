@@ -196,6 +196,7 @@ def vitesse_image(S, shots):
         if len(v) < 8 or v.max() < 0.6: continue
         vs = smooth(v, 3); hi = vs.max(); lo = vs.min()
         if lo > 0.3 * hi: continue
+        if np.percentile(vs, 20) < 0.08: continue     # image vraiment immobile : un plan fixe suivi d'un mouvement, pas un ralenti
         lent = vs < 0.35 * hi; rap = vs > 0.7 * hi
         # suite de phases (lent / rapide) d'au moins 3 images
         ph = []
