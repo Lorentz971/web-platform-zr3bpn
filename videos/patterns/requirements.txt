@@ -1,0 +1,9 @@
+opencv-python-headless>=4.10,<5
+numpy
+scipy
+librosa
+pyloudnorm
+matplotlib
+pytesseract
+Pillow
+scikit-image

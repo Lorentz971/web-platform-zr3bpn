@@ -7,7 +7,23 @@
 - `rapport.md` : la même chose, lisible ;
 - `timeline.png` : une frise avec les plans, le zoom, les sous-titres, le visage, le son et l'intensité.
 
-**À installer** : `pip install "opencv-python-headless<5" numpy librosa pyloudnorm scipy matplotlib pytesseract`, plus `tesseract-ocr` (pour lire les sous-titres) et `ffmpeg`.
+## Installation (une seule fois par ordinateur)
+
+| Où | Quoi faire |
+|---|---|
+| **Windows** | Clic droit sur `installer-windows.ps1` → « Exécuter avec PowerShell ». Il installe Python, ffmpeg, Tesseract (avec le français) et les modules, puis lance l'auto-test. |
+| **Mac** | Installer [Homebrew](https://brew.sh), puis dans le Terminal : `bash installer.sh` |
+| **Linux** | `bash installer.sh` |
+| **Session Claude Code (cloud)** | Demander à Claude : « lance `bash videos/patterns/installer.sh` ». Une session cloud repart de zéro à chaque nouvelle session, donc l'installation est à refaire à chaque fois (environ 2 minutes). |
+
+**Pour vérifier** : `python3 verifier_installation.py` affiche ce qui est installé, puis fabrique la vidéo de test, l'analyse et affiche le score (il doit être **23 / 23**). Avec `--rapide`, il ne fait que la vérification des installations.
+
+**Ce qui est installé** :
+- **ffmpeg** : lit la vidéo et extrait le son ;
+- **Tesseract**, en anglais et en français : lit le texte des sous-titres ;
+- **les modules Python** listés dans `requirements.txt` : OpenCV (image, mouvements, visages ; une version inférieure à 5 est obligatoire pour les visages), librosa et pyloudnorm (son), NumPy et SciPy (calculs), Matplotlib (frise), Pillow et scikit-image (vidéo de test).
+
+**Pour l'autre compte Claude** : envoyez-lui `outil-analyse-montage.zip` (ou ce dossier). Tout y est.
 
 ## Ce qui est mesuré
 

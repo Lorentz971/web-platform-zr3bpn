@@ -24,10 +24,16 @@ W0 = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)); H0 = int(cap.get(cv2.CAP_PROP_FRAME
 AW = 640; AH = int(round(H0 * AW / W0)); SC = W0 / AW            # résolution d'analyse et facteur d'échelle
 
 try:
-    import pytesseract
+    import pytesseract, shutil
+    if not shutil.which('tesseract'):                       # Windows : emplacement d'installation habituel
+        for cand in [r'C:\Program Files\Tesseract-OCR\tesseract.exe', r'C:\Program Files (x86)\Tesseract-OCR\tesseract.exe']:
+            if os.path.exists(cand): pytesseract.pytesseract.tesseract_cmd = cand
+    _langs = pytesseract.get_languages(config='')
+    OCR_LANG = '+'.join(l for l in ('eng', 'fra') if l in _langs) or 'eng'
     HAS_OCR = True
 except Exception:
     HAS_OCR = False
+    print('⚠️  Tesseract introuvable : les sous-titres ne seront pas lus (voir README).')
 FACE = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml') if hasattr(cv2, 'CascadeClassifier') else None
 
 # ---------------------------------------------------------------------------
@@ -108,7 +114,7 @@ def ocr_caption(bgr, box):
     if crop.size == 0: return None
     g = cv2.resize(crop.max(axis=2), None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
     _, b1 = cv2.threshold(g, 170, 255, cv2.THRESH_BINARY_INV)          # texte clair (blanc ou coloré) sur contour sombre
-    d = pytesseract.image_to_data(b1, config='--psm 7', output_type=pytesseract.Output.DICT)
+    d = pytesseract.image_to_data(b1, lang=OCR_LANG, config='--psm 7', output_type=pytesseract.Output.DICT)
     words = [(d['text'][i].strip(), int(float(d['conf'][i])), d['left'][i] // 2, d['width'][i] // 2) for i in range(len(d['text'])) if d['text'][i].strip()]
     words = [w for w in words if w[1] > 55 and sum(ch.isalnum() for ch in w[0]) >= max(1, len(w[0]) // 2)]
     if not words: return None

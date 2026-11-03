@@ -1,0 +1,8 @@
+full.mp4
+full_raw.mp4
+full.wav
+truth_full.json
+autotest/
+test.mp4
+truth.csv
+__pycache__/
