@@ -6,7 +6,7 @@ from . import musique as mus, glossaire
 CONF = {'coupe sèche': 0.95, 'jump cut': 0.8, 'coupe avec recadrage': 0.85, 'fondu enchaîné': 0.85, 'flash blanc': 0.9, 'fondu au noir': 0.9,
         'glissement': 0.75, 'panoramique filé': 0.75, 'rideau': 0.8, 'glitch': 0.7, 'zoom de transition': 0.7, 'rotation de transition': 0.8,
         'transition (autre)': 0.4, 'changement de fond (sujet détouré)': 0.7, "silhouette (sujet rempli d'une couleur)": 0.7,
-        'collage (panneaux qui se posent)': 0.6, 'rampe de vitesse (velocity)': 0.7}
+        'collage (panneaux qui se posent)': 0.6, 'rampe de vitesse (velocity)': 0.7, 'secousse (shake sur le temps)': 0.5}
 
 
 def _fonction(typ, t, M, contexte):
@@ -42,7 +42,7 @@ def annoter(P, M):
     for c in P.get('sous_titres', []) + P.get('textes_a_l_ecran', []):
         ph = next((p['text'] for p in phrases if p['start_s'] - 0.5 <= c['start_s'] <= p['end_s'] + 0.3), None)
         typ = 'texte derrière le sujet' if c.get('derriere_le_sujet') else 'texte qui suit le sujet' if c.get('suit_le_sujet') else 'sous-titre'
-        c['role'] = _fonction(typ, c['start_s'], M, dict(phrase=ph)); c['confiance'] = 0.6 if c.get('derriere_le_sujet') else 0.75
+        c['role'] = _fonction(typ, c['start_s'], M, dict(phrase=ph)); c['confiance'] = 0.4 if c.get('suit_le_sujet') else 0.6 if c.get('derriere_le_sujet') else 0.75
     for x in (P.get('son') or {}).get('effets_sonores', []):
         x['role'] = dict(lien_musique=mus.lien(x['t'], M), partie_musicale=mus.partie(x['t'], M),
                          fonction='souligne ' + x['synchronise_avec'] if x.get('synchronise_avec') else 'habille le son')
