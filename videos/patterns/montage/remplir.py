@@ -49,6 +49,9 @@ def recaler(T, M, duree_max=None):
             first = cases[0]['debut_temps']
             cand = sorted(d_new, key=lambda k: (max(0, -(first + k - d_old[0])), abs(k - d_old[0])))
             off = cand[0] - d_old[0]; quoi = f"drop {'du script' if T.get('source') == 'script' else 'de l original'.replace(' l ', " l'")} (temps {d_old[0]:.1f}) sur le drop de la nouvelle musique ({_t_de(cand[0], tb):.2f} s)"
+        elif d_new and not d_old and (cases[0].get('partie') or '') in ('refrain / partie forte', 'drop'):
+            # l'original est intense dès le début (pas de montée) : on le pose sur le drop de notre musique, pas sur son intro calme
+            off = d_new[0] - cases[0]['debut_temps']; quoi = f"original intense dès le début : posé sur le drop de la nouvelle musique ({_t_de(d_new[0], tb):.2f} s)"
         off = round(off)                                         # nombre entier de temps : on garde la place dans la mesure
         brut = [(_t_de(c['debut_temps'] + off, tb), _t_de(c['debut_temps'] + c['duree_temps'] + off, tb)) for c in cases]
         # finition : chaque coupe calée sur un temps de l'original est aimantée au coup le plus proche de la nouvelle musique
@@ -139,7 +142,10 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
                 if melange == 'ordre' and ri == pos[0] and w0 < pos[1] - 1e-3: continue
                 s, why, tg = bq.score_fenetre(r, w0, wd, besoin)
                 rec = sum(min(w0 + wd, b_) - max(w0, a_) for ch, a_, b_ in utilises if ch == r['chemin'] and min(w0 + wd, b_) > max(w0, a_))
-                s -= 3 * rec / wd                                   # déjà utilisé : on évite de montrer deux fois la même chose
+                if rec / wd > 0.15 and not seul: continue            # jamais deux fois le même passage (interdit, pas seulement déconseillé)
+                s -= 3 * rec / wd
+                proche = min([max(0.0, max(a_, w0) - min(b_, w0 + wd)) for ch, a_, b_ in utilises if ch == r['chemin']] + [99])
+                if proche < 1.0 and not seul: s -= 1.0 * (1 - proche)   # à moins d'1 s d'un passage déjà pris : c'est la même action
                 if r['chemin'] == prev_rush: s -= 0.8               # deux cases de suite dans le même rush : moins bien
                 if vit < vl - 1e-6: s -= 2 * (1 - vit / vl)        # rush trop court → ralenti en plus
                 if (r['orientation'] == 'horizontal') != (fmt == 'horizontal') and r['orientation'] != 'carré': s -= 0.3
@@ -192,15 +198,22 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
                 else: de, a = z_cur * (1 + amp), z_cur                   # dézoom : on part plus serré et on revient (jamais de bords noirs)
                 zooms.append(dict(t0=zt, dur_s=zd, de=round(de, 3), a=round(a, 3), courbe=m.get('courbe') or 'freine à la fin (ease-out)', plan=len(clips)))
                 z_cur = a; n_z += 1
+            elif m['type'].startswith('secousse'):                  # shake sur le temps : rendu directement
+                clip.setdefault('secousses', []).append(dict(t=round(m['debut_rel_s'] * k, 3), dur_s=max(0.1, m.get('dur_s') or 0.13),
+                                                             amplitude_pct=min(4.0, m.get('amplitude_px') or 2.5)))
             elif m['type'] not in ZOOMS: a_faire.append(m['type'])
         clip['effets_image'] = [dict(e, debut_rel_s=round(e['debut_rel_s'] * k, 3), duree_s=round(e['duree_s'] * k, 3)) for e in c['effets']]
-        a_faire += [e['type'] for e in c['effets']]
+        TEINTES = {'rouge': '#e0202a', 'orange': '#ff8a1c', 'jaune': '#ffd21c', 'vert': '#2fbf4a', 'cyan': '#1cc8e0', 'bleu': '#2a5cff', 'violet': '#8a3cff', 'rose': '#ff3c9e', 'or': '#d4a017'}
+        for e in c['effets']:
+            if e['type'].startswith('teinte unique') and TEINTES.get((e.get('couleurs') or '').split(' ')[0]) and e['duree_s'] > 0.25 * c['duree_s']:
+                clip['teinte'] = TEINTES[e['couleurs'].split(' ')[0]]           # rendu : couleur posée sur l'image
+            else: a_faire.append(e['type'])
         if a_faire: clip['a_faire'] = sorted(set(a_faire))
         for o in c['incrustations']:
-            if o['type'] in ('bandeau', 'forme (flèche…)', 'sticker / émoji', 'encart / image', 'texte animé'):
+            if o['type'] in ('bandeau', 'forme (flèche…)', 'sticker / émoji', 'encart / image', 'texte animé') and (o.get('confiance') or 1) >= 0.75:
                 incr.append(dict(type=o['type'], t0=round(t0 + o['debut_rel_s'] * k, 3), t1=round(min(t1 + 1.5, t0 + o['debut_rel_s'] * k + 2), 3),
                                  centre_pct=o.get('centre_pct') or [50, 40], entree=o.get('entree') or 'pop avec rebond', texte=o.get('texte')))
-            elif o['type'] not in ('barre de progression',): clip.setdefault('a_faire', []).append(o['type'])
+            elif o['type'] not in ('barre de progression',): clip.setdefault('a_faire', []).append(o['type'] + (' (peu sûr)' if (o.get('confiance') or 1) < 0.75 else ''))
         for tx in c['textes']:
             nouveau = tx['texte_original'] if tx.get('notre') else (textes.pop(0) if textes else None)
             tt0 = round(t0 + tx['debut_rel_s'] * k, 3)
@@ -217,6 +230,20 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
             if nom: effets.append(dict(t=round(max(0, t0 + sx['debut_rel_s'] * k), 3), type=nom, fichier=f'sfx/{nom}.wav'))
         rapport.append(dict(case=c['n'], t0=t0, t1=t1, rush=r['nom'], de=clip['src_in'], a=clip['src_out'], note=round(s, 2), ok=why.get('ok', []),
                             manque=why.get('manque', []), besoin={kk: v for kk, v in besoin.items() if not kk.startswith('_')}, role=c['role'], vitesse=vit, a_faire=clip.get('a_faire', [])))
+        # velocity : le plan passe du ralenti à l'accéléré (ou l'inverse) sans coupe visible : deux morceaux du même passage
+        V = {'lent puis rapide': (0.6, 0.45, 1.6), 'rapide puis lent': (0.4, 1.6, 0.45)}
+        if clip.get('velocity') and d >= 0.45 and abs(vit - 1) < 1e-3:
+            fr_, v1, v2 = V.get(clip['velocity'].get('forme') or '', (0.6, 0.45, 1.6))
+            tc = round(t0 + fr_ * d, 3); sc_ = round(clip['src_in'] + (tc - t0) * v1, 3)
+            sec = dict(clip, t0=tc, src_in=sc_, src_out=round(sc_ + (t1 - tc) * v2, 3), vitesse=v2, suite_de_velocity=True)
+            sec.pop('transition_entree', None)
+            clip.update(t1=tc, src_out=sc_, vitesse=v1)
+            clip['a_faire'] = [x for x in clip.get('a_faire', []) if not x.startswith('rampe de vitesse')]
+            sec['a_faire'] = clip['a_faire']
+            clips.append(clip); clips.append(sec); rapport[-1]['a_faire'] = clip['a_faire']; rapport[-1]['velocity'] = f"ralenti ×{v1} puis ×{v2}"
+            for z in zooms:                                          # un zoom qui déborde sur le 2e morceau est raccourci
+                if z['plan'] == len(clips) - 2 and z['t0'] + z['dur_s'] > tc: z['dur_s'] = round(max(0.05, tc - z['t0']), 3)
+            continue
         clips.append(clip)
     duree = clips[-1]['t1'] if clips else 0
     musd = None

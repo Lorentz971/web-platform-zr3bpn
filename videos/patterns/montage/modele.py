@@ -15,6 +15,12 @@ def _temps(t, M):
     return round(i + (t - tb[i]) / (tb[i + 1] - tb[i]), 2)
 
 
+def _est_un_passage_au_noir(x, P):
+    """Des « bandes noires » brèves collées à un fondu au noir, c'est le fondu lui-même (l'image noircit), pas un format cinéma."""
+    if not x['type'].startswith('bandes noires') or x.get('dur_s', 0) > 0.6: return False
+    return any(e['type'] == 'fondu au noir' and min(abs(e['start_s'] - x['start_s']), abs(e['start_s'] - x['end_s'])) < 0.45 for e in P['transitions'])
+
+
 def texte_de_montage(t):
     """Un vrai texte d'edit (titre, mot qui claque) et pas un élément de retransmission (score, bandeau d'info, logo de chaîne) :
     assez gros, pas collé à un bord de l'écran."""
@@ -53,9 +59,9 @@ def construire(P):
             entree=dict(type=entree['type'], images=entree.get('dur_frames', 0), **{k: entree[k] for k in ('direction', 'zoom_pct', 'couleur') if entree.get(k)}) if entree else None,
             vitesse=dict(type='velocity', forme=vel.get('forme'), profil=vel.get('profil')) if vel else None,
             mouvements=[dict(type=m['type'], debut_rel_s=round(m['start_s'] - a, 2), **{k: m[k] for k in ('dur_s', 'zoom_pct', 'degres', 'courbe', 'origine', 'amplitude_px', 'frequence_hz') if m.get(k) is not None}) for m in mouvements if 'velocity' not in m['type']],
-            effets=[dict(type=x['type'], debut_rel_s=round(max(0, x['start_s'] - a), 2), duree_s=round(min(b, x['end_s']) - max(a, x['start_s']), 2), **({'couleurs': x['couleurs']} if x.get('couleurs') else {})) for x in effets],
+            effets=[dict(type=x['type'], debut_rel_s=round(max(0, x['start_s'] - a), 2), duree_s=round(min(b, x['end_s']) - max(a, x['start_s']), 2), confiance=x.get('confiance'), **({'couleurs': x['couleurs']} if x.get('couleurs') else {})) for x in effets if (x.get('confiance') or 1) >= 0.5 and not _est_un_passage_au_noir(x, P)],
             masques=[dict(type=e['type'], debut_rel_s=round(e['start_s'] - a, 2), sujet_boite_pct=e.get('sujet_boite_pct'), couleur=e.get('couleur')) for e in masques],
-            incrustations=[dict(type=o['type'], debut_rel_s=round(o['start_s'] - a, 2), **{k: o[k] for k in ('centre_pct', 'taille_pct_ecran', 'entree', 'texte', 'nombre_de_panneaux', 'penches') if o.get(k) is not None}) for o in incr],
+            incrustations=[dict(type=o['type'], debut_rel_s=round(o['start_s'] - a, 2), **{k: o[k] for k in ('confiance', 'centre_pct', 'taille_pct_ecran', 'entree', 'texte', 'nombre_de_panneaux', 'penches') if o.get(k) is not None}) for o in incr],
             textes=[dict(texte_original=t['text'], debut_rel_s=round(t['start_s'] - a, 2), duree_s=t['dur_s'], animation=t.get('animation'),
                          role='sous-titre' if t in P.get('sous_titres', []) else 'titre', derriere_le_sujet=bool(t.get('derriere_le_sujet')), suit_le_sujet=bool(t.get('suit_le_sujet')),
                          position=[t.get('centre_x_pct'), t.get('centre_y_pct')], hauteur_pct=t.get('hauteur_pct'), majuscules=t.get('majuscules')) for t in textes],

@@ -82,6 +82,11 @@ const Plan: React.FC<{clip: Clip; idx: number; muted?: boolean; handle: number}>
     if (k >= 0) st = {...st, ...sortie('zoom de transition', nz, k, width)};
   }
   const z = zoomAt(clip, idx, fg);
+  let sx = 0, sy = 0;                              // secousse sur le temps : l'image part puis revient en quelques images
+  for (const q of ((clip as any).secousses || [])) {
+    const k = (fg - F(clip.t0 + q.t)) / Math.max(1, F(q.dur_s));
+    if (k >= 0 && k < 1) { const a = (q.amplitude_pct / 100) * width * (1 - k); sx += a * Math.sin(k * 31); sy += a * 0.7 * Math.cos(k * 23); }
+  }
   return (
     <AbsoluteFill style={{overflow: 'hidden', ...st, ...((st as any)._mb > 0.5 ? {filter: `url(#mb${idx})`} : {})}}>
       {(st as any)._mb > 0.5 ? (
@@ -94,10 +99,11 @@ const Plan: React.FC<{clip: Clip; idx: number; muted?: boolean; handle: number}>
             style={{width: '100%', height: '100%', objectFit: 'cover'}} />
         </AbsoluteFill>
       ) : null}
-      <AbsoluteFill style={{transform: `scale(${z})`, ...grade()}}>
+      <AbsoluteFill style={{transform: `translate(${sx}px, ${sy}px) scale(${z * (sx || sy ? 1.06 : 1)})`, ...grade()}}>
         <OffthreadVideo src={media(clip.nom)} startFrom={Math.max(0, F(clip.src_in) - handle)} muted={muted} playbackRate={clip.vitesse || 1}
           style={{width: '100%', height: '100%', objectFit: clip.cadrage === 'flou' ? 'contain' : 'cover', objectPosition: `${clip.centre_x_pct ?? 50}% 50%`}} />
       </AbsoluteFill>
+      {(clip as any).teinte ? <AbsoluteFill style={{background: (clip as any).teinte, mixBlendMode: 'color', opacity: 0.55}} /> : null}
     </AbsoluteFill>
   );
 };
