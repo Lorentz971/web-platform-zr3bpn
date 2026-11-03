@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+"""Applique un pattern de montage (mesuré sur une vidéo YouTube / TikTok) à NOS rushs.
+
+Usage :
+  python3 appliquer_pattern.py PATTERN.json RUSH1.mp4 [RUSH2.mp4 ...] [--musique MUSIQUE.mp3] [--duree 60]
+                               [--format vertical|horizontal|carre] [--sortie DOSSIER] [--rendu] [--graine 0]
+
+  PATTERN.json : le pattern.json d'une vidéo (analyse_montage.py) ou un style combiné (agreger.py).
+  Les rushs où l'on parle deviennent la piste principale (silences retirés, coupes entre les mots) ;
+  les rushs sans parole servent d'illustrations par-dessus la voix.
+
+Produit dans DOSSIER (par défaut ./montage) :
+  plan-de-montage.json        toutes les décisions, lisibles et modifiables
+  remotion/                   projet Remotion prêt à rendre (npm install puis npm run rendu)
+  davinci/montage.fcpxml      à importer dans DaVinci Resolve (Fichier → Importer → Timeline) ou Final Cut Pro
+  davinci/montage_V1.edl …    EDL CMX 3600 (Premiere, Avid, DaVinci)
+  capcut/recette.md           la recette pas à pas (CapCut ou tout logiciel), avec chaque action et son timecode
+  sous-titres.srt, marqueurs.csv, sfx/*.wav (effets sonores fabriqués par calcul)
+
+--rendu : rend la vidéo avec Remotion (Node.js requis), puis la ré-analyse et la compare au pattern
+          (boucle de conformité : conformite.md).
+"""
+import argparse, json, os, shutil, subprocess, sys
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from montage import plan as planif, exports, sfx_lib
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument('pattern'); ap.add_argument('rushs', nargs='+')
+    ap.add_argument('--musique'); ap.add_argument('--duree', type=float); ap.add_argument('--format', choices=['vertical', 'horizontal', 'carre'])
+    ap.add_argument('--sortie', default='montage'); ap.add_argument('--rendu', action='store_true'); ap.add_argument('--graine', type=int, default=0)
+    ap.add_argument('--node-modules', help='dossier node_modules existant à réutiliser (évite npm install)')
+    a = ap.parse_args()
+    P = json.load(open(os.path.join(a.pattern, 'pattern.json') if os.path.isdir(a.pattern) else a.pattern))
+    out = os.path.abspath(a.sortie); os.makedirs(out, exist_ok=True)
+    plan = planif.construire(P, a.rushs, musique=a.musique, duree_max=a.duree, format_=a.format, graine=a.graine)
+    sfx = sfx_lib.ecrire(os.path.join(out, 'sfx'))
+    json.dump(plan, open(os.path.join(out, 'plan-de-montage.json'), 'w'), ensure_ascii=False, indent=1)
+    chemins = {r['nom']: r['chemin'] for r in plan['rushs']}
+    if plan.get('musique'): chemins[plan['musique']['nom']] = plan['musique']['src']
+    for nom, v in sfx.items(): chemins[f'{nom}.wav'] = v['fichier']
+    exports.srt(plan, os.path.join(out, 'sous-titres.srt'))
+    rows = exports.marqueurs(plan, os.path.join(out, 'marqueurs.csv'))
+    os.makedirs(os.path.join(out, 'davinci'), exist_ok=True); os.makedirs(os.path.join(out, 'capcut'), exist_ok=True)
+    exports.fcpxml(plan, os.path.join(out, 'davinci', 'montage.fcpxml'), chemins)
+    exports.edl(plan, os.path.join(out, 'davinci', 'montage'))
+    exports.recette_md(plan, os.path.join(out, 'capcut', 'recette.md'), rows)
+    shutil.copy(os.path.join(out, 'sous-titres.srt'), os.path.join(out, 'capcut', 'sous-titres.srt'))
+    rdir = os.path.join(out, 'remotion')
+    exports.remotion(plan, rdir, os.path.join(HERE, 'remotion', 'PatternMontage.tsx'), chemins)
+    print(f"\nPlan : {len(plan['clips'])} plans, {len(plan['illustrations'])} illustrations, {len(plan['transitions'])} transitions, {len(plan['zooms'])} zooms, "
+          f"{len(plan['sous_titres'])} sous-titres, {len(plan['effets'])} effets sonores, {plan['duree_s']:.1f} s → {out}")
+    if a.rendu:
+        nm = os.path.join(rdir, 'node_modules')
+        if a.node_modules and not os.path.exists(nm): os.symlink(os.path.abspath(a.node_modules), nm)
+        if not os.path.exists(nm): subprocess.run(['npm', 'install', '--no-audit', '--no-fund'], cwd=rdir, check=True)
+        os.makedirs(os.path.join(rdir, 'out'), exist_ok=True)
+        subprocess.run(['npx', 'remotion', 'render', 'src/index.ts', 'PatternMontage', 'out/montage.mp4', '--log=error'], cwd=rdir, check=True)
+        video = os.path.join(rdir, 'out', 'montage.mp4'); print('Vidéo rendue :', video)
+        print('Boucle de conformité : ré-analyse de notre montage…')
+        subprocess.run([sys.executable, os.path.join(HERE, 'analyse_montage.py'), video, os.path.join(out, 'analyse-du-rendu')], check=True)
+        ref = os.path.join(a.pattern, 'pattern.json') if os.path.isdir(a.pattern) else a.pattern
+        subprocess.run([sys.executable, os.path.join(HERE, 'comparer.py'), ref, os.path.join(out, 'analyse-du-rendu', 'pattern.json'), os.path.join(out, 'conformite.md')], check=True)
+
+
+if __name__ == '__main__':
+    main()

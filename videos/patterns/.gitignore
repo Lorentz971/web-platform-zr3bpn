@@ -6,3 +6,7 @@ autotest/
 test.mp4
 truth.csv
 __pycache__/
+v2.mp4
+v2_raw.mp4
+v2.wav
+montage-test/

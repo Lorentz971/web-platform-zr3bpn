@@ -1,0 +1,374 @@
+{
+ "format": "vertical 9:16",
+ "resolution": [
+  720,
+  1280
+ ],
+ "cuts_hard_s": [
+  2.0,
+  24.0,
+  28.0,
+  28.25,
+  28.75,
+  29.25,
+  29.75,
+  30.25,
+  30.75,
+  31.25,
+  31.75,
+  32.25,
+  32.75,
+  33.25,
+  33.75,
+  34.25,
+  34.75,
+  35.25,
+  35.75,
+  36.25,
+  36.75,
+  37.25,
+  37.75,
+  38.25,
+  38.75,
+  39.25,
+  39.75
+ ],
+ "reframe_cut": {
+  "t": 2.0,
+  "zoom_pct": 15
+ },
+ "transitions": [
+  {
+   "type": "panoramique filé",
+   "start_s": 4.0,
+   "dur_frames": 8
+  },
+  {
+   "type": "glitch",
+   "start_s": 8.0,
+   "dur_frames": 4
+  },
+  {
+   "type": "zoom de transition",
+   "start_s": 12.0,
+   "dur_frames": 6
+  },
+  {
+   "type": "rideau",
+   "start_s": 16.0,
+   "dur_frames": 12,
+   "direction": "vers la droite"
+  },
+  {
+   "type": "rotation de transition",
+   "start_s": 20.0,
+   "dur_frames": 10
+  },
+  {
+   "type": "flash blanc",
+   "start_s": 37.0,
+   "dur_frames": 2
+  }
+ ],
+ "speed_ramp": {
+  "start_s": 12.5,
+  "end_s": 15.5,
+  "from_px": 4,
+  "to_px": 16
+ },
+ "reverse": {
+  "start_s": 26.0,
+  "dur_s": 2.0
+ },
+ "overlays": [
+  {
+   "type": "sticker",
+   "start_s": 5.0,
+   "end_s": 7.0,
+   "entree": "pop",
+   "sortie": "réduction",
+   "centre_pct": [
+    75,
+    23
+   ]
+  },
+  {
+   "type": "flèche",
+   "start_s": 6.0,
+   "end_s": 8.0,
+   "entree": "glissement depuis la gauche"
+  },
+  {
+   "type": "bandeau",
+   "start_s": 9.0,
+   "end_s": 11.83,
+   "entree": "glissement depuis la gauche",
+   "position": "bas gauche"
+  },
+  {
+   "type": "émoji",
+   "start_s": 30.25,
+   "end_s": 31.25,
+   "entree": "pop"
+  },
+  {
+   "type": "image dans l'image",
+   "start_s": 12.2,
+   "end_s": 16.0,
+   "position": "bas droite"
+  },
+  {
+   "type": "barre de progression",
+   "start_s": 0,
+   "end_s": 40,
+   "position": "haut"
+  }
+ ],
+ "split_screen": {
+  "start_s": 16.4,
+  "end_s": 20.0,
+  "layout": "gauche / droite"
+ },
+ "captions": [
+  {
+   "text": "THIS IS",
+   "start_s": 0.3,
+   "end_s": 1.0,
+   "animation": "pop"
+  },
+  {
+   "text": "HOW IT STARTED",
+   "start_s": 1.0,
+   "end_s": 2.0,
+   "animation": "pop"
+  },
+  {
+   "text": "NOBODY SAW IT COMING",
+   "start_s": 2.0,
+   "end_s": 3.9,
+   "animation": "mot par mot"
+  }
+ ],
+ "caption_y_pct": 70,
+ "highlight": "vert",
+ "titles": [
+  {
+   "text": "PART 2",
+   "start_s": 20.33
+  },
+  {
+   "text": "THE TURN",
+   "start_s": 20.33
+  }
+ ],
+ "shot_types": [
+  {
+   "start_s": 0,
+   "end_s": 4,
+   "type": "face caméra"
+  },
+  {
+   "start_s": 4.27,
+   "end_s": 8,
+   "type": "illustration"
+  },
+  {
+   "start_s": 8.13,
+   "end_s": 12,
+   "type": "capture d'écran"
+  },
+  {
+   "start_s": 12.2,
+   "end_s": 16,
+   "type": "illustration"
+  },
+  {
+   "start_s": 16.4,
+   "end_s": 20,
+   "type": "écran partagé"
+  },
+  {
+   "start_s": 20.33,
+   "end_s": 24,
+   "type": "carton de texte"
+  },
+  {
+   "start_s": 24,
+   "end_s": 28,
+   "type": "illustration"
+  }
+ ],
+ "grade": {
+  "shot": "0-4 s",
+  "shadows": "bleutées",
+  "highlights": "orangées",
+  "vignette": 0.35,
+  "grain_std": 6
+ },
+ "letterbox": {
+  "start_s": 24,
+  "end_s": 28,
+  "bar_pct": 12
+ },
+ "face": {
+  "present_s": [
+   0,
+   4.27
+  ],
+  "centre_pct": [
+   50,
+   27
+  ]
+ },
+ "voice_lines": [
+  [
+   0.3,
+   1.56,
+   "This is how it started."
+  ],
+  [
+   2.0,
+   3.3,
+   "Nobody saw it coming."
+  ],
+  [
+   4.6,
+   5.69,
+   "Look at this number."
+  ],
+  [
+   8.4,
+   10.53,
+   "Here is the screen they used every day."
+  ],
+  [
+   12.5,
+   13.94,
+   "Then everything sped up."
+  ],
+  [
+   16.6,
+   18.18,
+   "Two sides of the same story."
+  ],
+  [
+   24.3,
+   26.21,
+   "And then, it went backwards."
+  ]
+ ],
+ "music": {
+  "bpm": 120,
+  "ducking_db": 10,
+  "cut_out": [
+   23.5,
+   24.0
+  ]
+ },
+ "sfx": [
+  {
+   "type": "whoosh",
+   "t": 4.0
+  },
+  {
+   "type": "glitch",
+   "t": 8.0
+  },
+  {
+   "type": "clavier",
+   "t": 9.5
+  },
+  {
+   "type": "whoosh",
+   "t": 12.0
+  },
+  {
+   "type": "whoosh",
+   "t": 16.0
+  },
+  {
+   "type": "whoosh",
+   "t": 20.0
+  },
+  {
+   "type": "ding",
+   "t": 22.0
+  },
+  {
+   "type": "boom",
+   "t": 24.0
+  },
+  {
+   "type": "riser",
+   "t": 27.2
+  },
+  {
+   "type": "pop",
+   "t": 28.25
+  },
+  {
+   "type": "pop",
+   "t": 28.75
+  },
+  {
+   "type": "pop",
+   "t": 29.25
+  },
+  {
+   "type": "pop",
+   "t": 29.75
+  },
+  {
+   "type": "pop",
+   "t": 30.25
+  },
+  {
+   "type": "pop",
+   "t": 30.75
+  },
+  {
+   "type": "pop",
+   "t": 31.25
+  },
+  {
+   "type": "pop",
+   "t": 31.75
+  },
+  {
+   "type": "clic",
+   "t": 32.25
+  },
+  {
+   "type": "clic",
+   "t": 32.75
+  },
+  {
+   "type": "clic",
+   "t": 33.25
+  },
+  {
+   "type": "clic",
+   "t": 33.75
+  },
+  {
+   "type": "clic",
+   "t": 34.25
+  },
+  {
+   "type": "clic",
+   "t": 34.75
+  },
+  {
+   "type": "clic",
+   "t": 35.25
+  },
+  {
+   "type": "clic",
+   "t": 35.75
+  },
+  {
+   "type": "déclencheur",
+   "t": 37.0
+  }
+ ]
+}
