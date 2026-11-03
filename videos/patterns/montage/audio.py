@@ -167,7 +167,7 @@ def analyse(video, events, moves, overlays):
     d_stem = float(np.median(m_out) - np.median(m_in)) if len(m_in) > 20 and len(m_out) > 20 else None
     out['coupures_musique'] = cutouts
     # ---- effets sonores
-    parle = out.get('temps_de_parole_pct', 0) >= 60 and acc is not None
+    parle = out.get('temps_de_parole_pct', 0) >= 80 and acc is not None
     out['effets_sonores'] = sfx(acc22 if parle else m22, 22050, beat_t, vseg, events, moves)   # on parle tout le temps : on cherche sans la voix
     if parle:
         for x in out['effets_sonores']: x['confiance'] = 0.5

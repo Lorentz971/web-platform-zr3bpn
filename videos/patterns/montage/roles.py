@@ -49,7 +49,7 @@ def annoter(P, M):
 
 def lecture(P, M):
     """Le montage raconté en clair, partie musicale par partie musicale."""
-    parties = (M or {}).get('parties') or [dict(de_s=0, a_s=P['duree_s'], nom='vidéo entière')]
+    parties = (M or {}).get('parties') or _parties_parole(P) or [dict(de_s=0, a_s=P['duree_s'], nom='vidéo entière')]
     L = []
     hard = ('coupe sèche', 'jump cut', 'coupe avec recadrage')
     for p in parties:
@@ -104,3 +104,23 @@ def narration(P, M):
         L.append(f"**Arc d'énergie** : {forme} (début {round(t1)}, milieu {round(t2)}, fin {round(t3)} sur 100) ; sommet vers {pic} s")
     if P.get('boucle'): L.append(f"**Boucle** : {P['boucle']}")
     return L
+
+
+
+def _parties_parole(P):
+    """Vidéo de parole sans musique : on découpe phrase par phrase (transcription mot à mot)."""
+    mots = (P.get('son') or {}).get('mots') or []
+    if len(mots) < 6: return None
+    parts, cur = [], []
+    for w in mots:
+        cur.append(w)
+        if w['w'].endswith(('.', '?', '!')) and len(cur) >= 3:
+            parts.append(cur); cur = []
+    if cur: parts.append(cur)
+    out = []
+    for i, ph in enumerate(parts):
+        txt = ' '.join(w['w'] for w in ph)
+        nom = ('accroche : ' if i == 0 else 'question : ' if txt.endswith('?') else 'idée : ') + '« ' + (txt if len(txt) < 70 else txt[:67] + '…') + ' »'
+        fin = parts[i + 1][0]['t'] if i + 1 < len(parts) else P['duree_s']
+        out.append(dict(de_s=round(ph[0]['t'], 2) if i else 0.0, a_s=round(fin, 2), nom=nom))
+    return out

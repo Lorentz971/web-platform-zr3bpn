@@ -170,7 +170,8 @@ def _trier(S, out, events=None):
             fil.append(o); continue
         dep = [v for f in sorted({(o['_f0'] + o['_f1']) // 2, o['_f1']}) for v in _deplacement(S, o['_box'], f)]   # texte complet (pas pendant qu'il s'écrit)
         if dep and np.median(dep) > 1.5: scene.append(o); scene_fort.append(o); continue   # il suit la caméra : texte filmé (logo, panneau)
-        if o['animation'] == 'apparition sèche' and cale_sur_le_plan(o): scene.append(o); continue   # un texte animé est forcément incrusté
+        immobile = bool(dep) and np.median(dep) < 0.4                       # parfaitement fixe à l'écran (titre, bandeau) : incrusté
+        if o['animation'] == 'apparition sèche' and cale_sur_le_plan(o) and not immobile: scene.append(o); continue   # un texte animé est forcément incrusté
         garde.append(o)
     # un même mot qui revient à plusieurs endroits différents de l'image = un logo dans la scène
     from collections import Counter
@@ -188,13 +189,14 @@ def _trier(S, out, events=None):
         mots = [norm(m) for m in t.split()] + [norm(t)]
         return any(len(m) >= 3 and (SequenceMatcher(None, m, b).ratio() > 0.75 or (len(b) >= 4 and b in m) or (len(m) >= 4 and len(b) >= 6 and b.startswith(m[:4]))) for m in mots for b in marques if b)
     import re
-    score_tv = re.compile(r'^(?:[A-Z]{2,4}\s*\d{1,3}|\d{1,3}[:.]\d|\d?(?:1ST|2ND|3RD|4TH|OT)|[A-Z]{2,4}\s+\d{1,3}\s+\S*)', re.I)
+    score_tv = re.compile(r'^(?:[A-Z]{2,4}\s*\d{2,3}|\d{1,3}[:.]\d|\d?(?:1ST|2ND|3RD|4TH|OT)\b)', re.I)
     def habillage_tv(t):                                   # score, chrono, quart-temps d'une retransmission (« LAL 97 3RD », « 104 20.3 »)
         mots = t.upper().split(); chiffres = sum(ch.isdigit() for ch in t)
         return bool(chiffres) and (chiffres >= 0.35 * max(1, len(norm(t))) or bool(score_tv.match(t.strip()))) and len(norm(t)) <= 16
     garde2 = []
     for o in garde:
-        if marque(o['text']) or (habillage_tv(o['text']) and o['dur_s'] > 0 and not o['text'].strip('.,!?').isdigit()): scene.append(o); continue
+        gros_chiffre = o['text'].strip('.,!?').isdigit() and o['hauteur_pct'] >= 3        # « 1 », « 2 » en gros : texte du montage
+        if marque(o['text']) or (habillage_tv(o['text']) and not gros_chiffre and o['hauteur_pct'] < 4): scene.append(o); continue
         k = o['text'].upper().replace(' ', '')
         if cnt[k] >= 3 and len(pos[k]) >= 3: scene.append(o)
         elif any(sim(o['text'], x['text']) > 0.8 for x in scene_fort): scene.append(o)   # même mot que des logos filmés ailleurs
@@ -215,7 +217,8 @@ def _trier(S, out, events=None):
     # deux lignes l'une sous l'autre, au même moment et centrées pareil : un seul texte (titre sur deux lignes)
     garde2.sort(key=lambda o: (o['start_s'], o['centre_y_pct'])); bloc = []
     for o in garde2:
-        q = next((q for q in bloc if abs(q['start_s'] - o['start_s']) <= 0.4 and abs(q['centre_x_pct'] - o['centre_x_pct']) <= 12
+        q = next((q for q in bloc if abs(q['start_s'] - o['start_s']) <= 0.4 and abs(q['start_s'] + q['dur_s'] - o['start_s'] - o['dur_s']) <= 0.4
+                  and abs(q['centre_x_pct'] - o['centre_x_pct']) <= 12
                   and 0 < o['centre_y_pct'] - q['centre_y_pct'] <= 2.2 * max(q['hauteur_pct'], o['hauteur_pct']) and abs(q['hauteur_pct'] - o['hauteur_pct']) < 0.5 * max(q['hauteur_pct'], o['hauteur_pct'])), None)
         if q:
             q.update(text=q['text'] + ' ' + o['text'], mots=q['mots'] + o['mots'], lignes=q.get('lignes', 1) + 1,

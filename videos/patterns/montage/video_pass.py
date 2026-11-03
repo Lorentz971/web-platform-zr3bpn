@@ -289,7 +289,32 @@ def _rapid_frame(fr, n):
         grand_mot = grand_mot or (len(wl) == 1 and ws[0][0].strip('.,!?').isdigit() and r['conf'] >= 80 and h >= 0.035 * H0)   # « 1 », « 2 », « 10 » en gros
         if r['conf'] >= 70 and (max(wl) >= 3 or len(wl) >= 2 or grand_mot):
             samples.append(dict(f=n, box=bb, moteur='rapidocr', **r))
+    samples += _gros_chiffres(fr, n, [s['box'] for s in samples] + [(int(x), int(y), int(w), int(h)) for (x, y, w, h), _ in lines])
     return dict(bands=[], samples=samples)
+
+
+def _gros_chiffres(fr, n, deja):
+    """Gros chiffres isolés (« 1 », « 2 », « 3 »… pour compter, souvent synchronisés avec les doigts) que la détection de
+    texte rate : on cherche les grandes formes blanches isolées et on les lit une par une (Tesseract, chiffres seulement)."""
+    if not HAS_OCR: return []
+    H0, W0 = fr.shape[:2]; out = []
+    m = (fr.min(axis=2) > 200).astype(np.uint8)
+    nb, lab, st, _ = cv2.connectedComponentsWithStats(m)
+    comps = [tuple(int(v) for v in st[i]) for i in range(1, nb) if 0.03 * H0 < st[i][3] < 0.12 * H0 and 0.2 < st[i][2] / st[i][3] < 1.0 and st[i][4] > 0.2 * st[i][2] * st[i][3]]
+    inter = lambda a, b: not (a[0] + a[2] < b[0] or b[0] + b[2] < a[0] or a[1] + a[3] < b[1] or b[1] + b[3] < a[1])
+    for x, y, w, h, a in comps[:8]:
+        if any(inter((x, y, w, h), d) for d in deja): continue
+        voisins = [c for c in comps if c[:2] != (x, y) and abs(c[1] - y) < 0.3 * h and abs(c[0] - x) < 1.6 * h and 0.6 < c[3] / h < 1.5]
+        if voisins or x <= 2 or y <= 2 or x + w >= W0 - 2 or y + h >= H0 - 2: continue     # une lettre d'un mot, ou un bord : pas un chiffre isolé
+        crop = (m[max(0, y - 6):y + h + 6, max(0, x - 8):x + w + 8] * 255)
+        img = cv2.resize(cv2.copyMakeBorder(255 - crop, 20, 20, 20, 20, cv2.BORDER_CONSTANT, value=255), None, fx=2, fy=2)
+        d = _ocr(img, '--psm 10 -c tessedit_char_whitelist=0123456789', timeout=2)
+        ws = [(d['text'][i].strip(), float(d['conf'][i])) for i in range(len(d['text'])) if d['text'][i].strip()]
+        if ws and ws[0][0].isdigit() and ws[0][1] >= 85:
+            out.append(dict(f=n, box=(x, y, w, h), text=ws[0][0], n_words=1, conf=ws[0][1], highlight_word=None, highlight_color=None,
+                            majuscules=False, contour=False, moteur='tesseract-chiffre'))
+        if len(out) >= 2: break
+    return out
 
 
 def _ocr_frame(fr, n, full, plan_b):
