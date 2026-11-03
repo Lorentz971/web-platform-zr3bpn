@@ -1,17 +1,41 @@
-# Mesurer les zooms et les mouvements d'une vidéo
+# Mesurer le pattern de montage d'une vidéo
 
-- `mesure-zoom.py VIDEO.mp4` : détecte les coupes, les zooms (en %, durée, vitesse, courbe d'accélération, point visé) et les panoramiques. Il écrit le résultat dans `pattern.json`.
-- `video-test-zooms.py` : fabrique une vidéo de test avec des zooms connus, pour vérifier la précision.
-- Résultat du test (vidéo compressée en H.264) :
+## L'outil
 
-| Réglage réel | Mesuré |
+`python3 analyse_montage.py VIDEO.mp4 DOSSIER_SORTIE` produit trois fichiers :
+- `pattern.json` : toutes les mesures, à réutiliser dans Remotion ou dans l'app de montage ;
+- `rapport.md` : la même chose, lisible ;
+- `timeline.png` : une frise avec les plans, le zoom, les sous-titres, le visage, le son et l'intensité.
+
+**À installer** : `pip install "opencv-python-headless<5" numpy librosa pyloudnorm scipy matplotlib pytesseract`, plus `tesseract-ocr` (pour lire les sous-titres) et `ffmpeg`.
+
+## Ce qui est mesuré
+
+| Famille | Paramètres |
 |---|---|
-| Zoom « boum » de +40 % en 6 images, qui freine à la fin | +40,0 % en 6 images, freinage détecté |
-| Le point visé : le mot surligné | Tombé exactement sur le mot (même pixel) |
-| Poussée lente de 140 % à 152 % en 2 s | +8,6 %, de 140,0 % à 152,0 % en 2,0 s |
-| Coupe à 4,2 s | Coupe à 4,2 s |
-| Panoramique de 400 px | 398 px |
+| **Rythme** | Coupes sèches, durée des plans (moyenne et médiane), plans par minute |
+| **Transitions** | Coupe sèche, fondu enchaîné (durée), flash blanc, fondu au noir, glissement (durée et direction) |
+| **Caméra** | Punch-in et dézoom rapide (%, durée, vitesse max, courbe d'accélération, point visé), poussée et recul lents, panoramiques (px et % de l'écran), rotations (degrés), tremblements (amplitude en px, fréquence en Hz) |
+| **Vitesse** | Ralentis et accélérés (vitesse du sujet avant/après, facteur), arrêts sur image |
+| **Couleurs** | Par plan : luminosité, contraste, saturation, teinte dominante, température (chaude/froide) |
+| **Sous-titres** | Texte (lu par OCR), moment et durée, nombre de mots, position, taille, mot surligné et sa couleur |
+| **Visages** | Moments de présence, taille moyenne à l'écran, position |
+| **Son** | Volume intégré (LUFS) et volume par seconde, tempo (BPM), coupes calées sur les temps, passages de voix, pauses, débit (syllabes/s, mots/min estimés), baisse de la musique sous la voix (dB), effets sonores (whoosh / boum) et l'événement visuel sur lequel ils tombent |
+| **Synthèse** | Indice d'intensité de 0 à 100, seconde par seconde |
 
-![Comparaison](zoom-mesure.png)
+## La vérification
 
-**Limites** : la mesure est très fiable sur des écrans, des articles ou des images fixes. Elle l'est moins quand le sujet bouge lui-même (une personne qui marche), en cas de flou de mouvement ou de vidéo très compressée. Dans ces cas, on mesure le mouvement du fond.
+`video-test-complete.py` fabrique une vidéo de 24 s qui contient tous ces effets, avec des réglages connus. `verifier.py` compare ensuite la mesure à la réalité.
+
+**Résultat : 23 paramètres justes sur 23** (voir `verification.md`). Sur la première vidéo de test (`video-test-zooms.py`), sans son, les mesures restent justes : punch-in +39,8 % pour +40 %, coupe à 4,2 s, panoramique de 397 px pour 400 px, sans fausse détection.
+
+Exemple de résultat : `rapport-exemple.md`, `pattern-exemple.json`, `timeline-exemple.png`.
+
+## Les limites (à garder en tête)
+
+- **Débit de parole** et **baisse de la musique** : ce sont des estimations faites sans transcription ni séparation des pistes, car les modèles ne sont pas téléchargeables dans cette session. C'est exact sur la vidéo de test, mais moins précis sur une vraie voix avec de la musique dans les mêmes fréquences.
+- **Effets sonores** : seuls deux types sont reconnus, le souffle (« whoosh ») et l'impact grave (« boum »).
+- **Ralenti** : on mesure la vitesse d'un objet qui bouge dans le plan. Un ralenti sur un plan sans objet en mouvement n'est pas détectable.
+- **Visages** : détecteur classique, efficace de face, moins de profil.
+- **Vraies vidéos** : la vidéo de test est propre. Sur des vidéos réelles (flou, compression, foule), il faut s'attendre à quelques erreurs, à vérifier sur les premières analyses.
+- `mesure-zoom.py` est la première version, limitée aux zooms. Elle est remplacée par `analyse_montage.py`.

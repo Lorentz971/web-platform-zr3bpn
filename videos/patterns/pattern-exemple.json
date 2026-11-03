@@ -1,0 +1,534 @@
+{
+  "video": "full.mp4",
+  "duree_s": 24.0,
+  "fps": 30.0,
+  "resolution": [
+    1280,
+    720
+  ],
+  "rythme": {
+    "nombre_de_plans": 17,
+    "duree_moyenne_plan_s": 1.34,
+    "duree_mediane_plan_s": 0.47,
+    "plans_par_minute": 42.5
+  },
+  "transitions": [
+    {
+      "type": "coupe sèche",
+      "start_s": 3.0,
+      "dur_frames": 0,
+      "dur_s": 0
+    },
+    {
+      "type": "fondu enchaîné",
+      "start_s": 6.0,
+      "dur_frames": 16,
+      "dur_s": 0.53
+    },
+    {
+      "type": "flash blanc",
+      "start_s": 11.5,
+      "dur_frames": 3,
+      "dur_s": 0.1
+    },
+    {
+      "type": "glissement",
+      "start_s": 14.5,
+      "dur_frames": 8,
+      "dur_s": 0.27,
+      "direction": "vers la gauche"
+    },
+    {
+      "type": "coupe sèche",
+      "start_s": 18.27,
+      "dur_frames": 0,
+      "dur_s": 0
+    },
+    {
+      "type": "coupe sèche",
+      "start_s": 18.77,
+      "dur_frames": 0,
+      "dur_s": 0
+    },
+    {
+      "type": "coupe sèche",
+      "start_s": 19.27,
+      "dur_frames": 0,
+      "dur_s": 0
+    },
+    {
+      "type": "coupe sèche",
+      "start_s": 19.77,
+      "dur_frames": 0,
+      "dur_s": 0
+    },
+    {
+      "type": "coupe sèche",
+      "start_s": 20.27,
+      "dur_frames": 0,
+      "dur_s": 0
+    },
+    {
+      "type": "coupe sèche",
+      "start_s": 20.77,
+      "dur_frames": 0,
+      "dur_s": 0
+    },
+    {
+      "type": "coupe sèche",
+      "start_s": 21.27,
+      "dur_frames": 0,
+      "dur_s": 0
+    },
+    {
+      "type": "coupe sèche",
+      "start_s": 21.77,
+      "dur_frames": 0,
+      "dur_s": 0
+    },
+    {
+      "type": "coupe sèche",
+      "start_s": 22.27,
+      "dur_frames": 0,
+      "dur_s": 0
+    },
+    {
+      "type": "coupe sèche",
+      "start_s": 22.77,
+      "dur_frames": 0,
+      "dur_s": 0
+    },
+    {
+      "type": "coupe sèche",
+      "start_s": 23.27,
+      "dur_frames": 0,
+      "dur_s": 0
+    },
+    {
+      "type": "coupe sèche",
+      "start_s": 23.77,
+      "dur_frames": 0,
+      "dur_s": 0
+    }
+  ],
+  "plans": [
+    {
+      "start_s": 0.0,
+      "end_s": 3.0,
+      "dur_s": 3.0,
+      "luminosite": 29,
+      "contraste": 11,
+      "saturation": 29,
+      "teinte": "vert",
+      "temperature": "neutre"
+    },
+    {
+      "start_s": 3.03,
+      "end_s": 6.0,
+      "dur_s": 2.97,
+      "luminosite": 34,
+      "contraste": 14,
+      "saturation": 77,
+      "teinte": "orange",
+      "temperature": "chaude"
+    },
+    {
+      "start_s": 6.53,
+      "end_s": 11.5,
+      "dur_s": 4.97,
+      "luminosite": 10,
+      "contraste": 7,
+      "saturation": 13,
+      "teinte": "neutre",
+      "temperature": "neutre"
+    },
+    {
+      "start_s": 11.6,
+      "end_s": 14.5,
+      "dur_s": 2.9,
+      "luminosite": 60,
+      "contraste": 25,
+      "saturation": 24,
+      "teinte": "orange",
+      "temperature": "chaude"
+    },
+    {
+      "start_s": 14.77,
+      "end_s": 18.27,
+      "dur_s": 3.5,
+      "luminosite": 28,
+      "contraste": 9,
+      "saturation": 72,
+      "teinte": "bleu",
+      "temperature": "froide"
+    },
+    {
+      "start_s": 18.3,
+      "end_s": 18.77,
+      "dur_s": 0.47,
+      "luminosite": 38,
+      "contraste": 15,
+      "saturation": 22,
+      "teinte": "vert",
+      "temperature": "neutre"
+    },
+    {
+      "start_s": 18.8,
+      "end_s": 19.27,
+      "dur_s": 0.47,
+      "luminosite": 29,
+      "contraste": 9,
+      "saturation": 51,
+      "teinte": "bleu",
+      "temperature": "froide"
+    },
+    {
+      "start_s": 19.3,
+      "end_s": 19.77,
+      "dur_s": 0.47,
+      "luminosite": 35,
+      "contraste": 14,
+      "saturation": 68,
+      "teinte": "cyan",
+      "temperature": "froide"
+    },
+    {
+      "start_s": 19.8,
+      "end_s": 20.27,
+      "dur_s": 0.47,
+      "luminosite": 28,
+      "contraste": 9,
+      "saturation": 23,
+      "teinte": "rouge",
+      "temperature": "chaude"
+    },
+    {
+      "start_s": 20.3,
+      "end_s": 20.77,
+      "dur_s": 0.47,
+      "luminosite": 32,
+      "contraste": 9,
+      "saturation": 28,
+      "teinte": "cyan",
+      "temperature": "froide"
+    },
+    {
+      "start_s": 20.8,
+      "end_s": 21.27,
+      "dur_s": 0.47,
+      "luminosite": 47,
+      "contraste": 15,
+      "saturation": 32,
+      "teinte": "cyan",
+      "temperature": "froide"
+    },
+    {
+      "start_s": 21.3,
+      "end_s": 21.77,
+      "dur_s": 0.47,
+      "luminosite": 44,
+      "contraste": 15,
+      "saturation": 57,
+      "teinte": "jaune",
+      "temperature": "chaude"
+    },
+    {
+      "start_s": 21.8,
+      "end_s": 22.27,
+      "dur_s": 0.47,
+      "luminosite": 24,
+      "contraste": 11,
+      "saturation": 59,
+      "teinte": "vert",
+      "temperature": "neutre"
+    },
+    {
+      "start_s": 22.3,
+      "end_s": 22.77,
+      "dur_s": 0.47,
+      "luminosite": 29,
+      "contraste": 10,
+      "saturation": 53,
+      "teinte": "cyan",
+      "temperature": "froide"
+    },
+    {
+      "start_s": 22.8,
+      "end_s": 23.27,
+      "dur_s": 0.47,
+      "luminosite": 43,
+      "contraste": 14,
+      "saturation": 31,
+      "teinte": "orange",
+      "temperature": "chaude"
+    },
+    {
+      "start_s": 23.3,
+      "end_s": 23.77,
+      "dur_s": 0.47,
+      "luminosite": 22,
+      "contraste": 8,
+      "saturation": 56,
+      "teinte": "orange",
+      "temperature": "chaude"
+    },
+    {
+      "start_s": 23.8,
+      "end_s": 24.0,
+      "dur_s": 0.2,
+      "luminosite": 33,
+      "contraste": 11,
+      "saturation": 47,
+      "teinte": "vert",
+      "temperature": "neutre"
+    }
+  ],
+  "mouvements": [
+    {
+      "type": "tremblement",
+      "start_s": 0.9,
+      "dur_s": 0.8,
+      "amplitude_px": 7.0,
+      "frequence_hz": 10.0
+    },
+    {
+      "type": "punch-in",
+      "start_s": 4.0,
+      "dur_frames": 4,
+      "dur_s": 0.13,
+      "zoom_pct": 29.8,
+      "vitesse_max_pct_par_image": 14.6,
+      "courbe": "freine à la fin (ease-out)",
+      "point_vise_pct": [
+        62,
+        33
+      ]
+    },
+    {
+      "type": "ralenti",
+      "start_s": 8.5,
+      "vitesse_avant_px_img": 12.0,
+      "vitesse_apres_px_img": 6.0,
+      "facteur": 0.5
+    },
+    {
+      "type": "arrêt sur image",
+      "start_s": 10.5,
+      "dur_s": 1.0
+    },
+    {
+      "type": "rotation",
+      "start_s": 12.63,
+      "dur_s": 1.0,
+      "degres": -7.9
+    },
+    {
+      "type": "poussée lente",
+      "start_s": 14.8,
+      "dur_frames": 91,
+      "dur_s": 3.03,
+      "zoom_pct": 10.4,
+      "vitesse_max_pct_par_image": 0.1,
+      "courbe": "constante",
+      "point_vise_pct": [
+        50,
+        50
+      ]
+    }
+  ],
+  "sous_titres": [
+    {
+      "text": "THIS IS",
+      "start_s": 0.3,
+      "mots": 2,
+      "mot_surligne": "IS",
+      "couleur_surlignage": "jaune",
+      "centre_x_pct": 50,
+      "centre_y_pct": 82,
+      "hauteur_pct": 6.9,
+      "dur_s": 0.7
+    },
+    {
+      "text": "THE MOST",
+      "start_s": 1.0,
+      "mots": 2,
+      "mot_surligne": "MOST",
+      "couleur_surlignage": "jaune",
+      "centre_x_pct": 50,
+      "centre_y_pct": 82,
+      "hauteur_pct": 6.4,
+      "dur_s": 0.6
+    },
+    {
+      "text": "IMPORTANT",
+      "start_s": 1.6,
+      "mots": 1,
+      "mot_surligne": "IMPORTANT",
+      "couleur_surlignage": "jaune",
+      "centre_x_pct": 50,
+      "centre_y_pct": 82,
+      "hauteur_pct": 7.5,
+      "dur_s": 0.7
+    },
+    {
+      "text": "NUMBER EVER",
+      "start_s": 2.3,
+      "mots": 2,
+      "mot_surligne": "NUMBER",
+      "couleur_surlignage": "jaune",
+      "centre_x_pct": 50,
+      "centre_y_pct": 82,
+      "hauteur_pct": 6.9,
+      "dur_s": 0.6
+    }
+  ],
+  "sous_titres_resume": {
+    "nombre": 4,
+    "mots_par_sous_titre": 1.8,
+    "duree_moyenne_s": 0.65,
+    "position_y_pct": 82,
+    "hauteur_texte_pct": 6.9,
+    "couleur_surlignage": "jaune"
+  },
+  "visages": {
+    "present_s": [
+      [
+        11.6,
+        14.6
+      ]
+    ],
+    "taille_moyenne_pct_ecran": 10.5,
+    "position_moyenne_pct": [
+      42,
+      55
+    ]
+  },
+  "son": {
+    "lufs_integre": -20.2,
+    "tempo_bpm": 120,
+    "temps_s": [
+      0.23,
+      0.73,
+      1.23,
+      1.74,
+      2.24,
+      2.74,
+      3.24,
+      3.74,
+      "…"
+    ],
+    "coupes_sur_le_temps": "12 coupes sèches sur 13",
+    "hasard_attendu_pct": 27,
+    "voix_segments_s": [
+      [
+        0.21,
+        2.88
+      ],
+      [
+        3.25,
+        5.8
+      ],
+      [
+        6.59,
+        9.01
+      ],
+      [
+        9.59,
+        11.31
+      ],
+      [
+        12.0,
+        14.3
+      ],
+      [
+        15.0,
+        17.81
+      ]
+    ],
+    "pauses_s": [
+      0.37,
+      0.79,
+      0.58,
+      0.69,
+      0.7
+    ],
+    "pause_moyenne_s": 0.63,
+    "syllabes_par_s": 5.1,
+    "mots_par_min_estimes": 205,
+    "baisse_musique_sous_voix_db": 10.0,
+    "effets_sonores": [
+      {
+        "t": 3.0,
+        "type": "souffle (whoosh)",
+        "synchronise_avec": "coupe sèche"
+      },
+      {
+        "t": 4.02,
+        "type": "impact grave (boum)",
+        "synchronise_avec": "punch-in"
+      },
+      {
+        "t": 11.49,
+        "type": "souffle (whoosh)",
+        "synchronise_avec": "flash blanc"
+      },
+      {
+        "t": 14.49,
+        "type": "souffle (whoosh)",
+        "synchronise_avec": "glissement"
+      }
+    ],
+    "volume_db_par_seconde": [
+      4.6,
+      3.6,
+      5.4,
+      6.8,
+      7.5,
+      4.3,
+      6.0,
+      3.6,
+      3.7,
+      6.0,
+      3.6,
+      8.7,
+      3.8,
+      3.6,
+      8.6,
+      3.7,
+      3.6,
+      4.3,
+      7.3,
+      7.3,
+      7.3,
+      7.3,
+      7.3,
+      7.2
+    ]
+  },
+  "intensite_par_seconde": [
+    5,
+    7,
+    7,
+    36,
+    32,
+    3,
+    32,
+    0,
+    0,
+    9,
+    0,
+    46,
+    2,
+    2,
+    77,
+    2,
+    2,
+    4,
+    61,
+    61,
+    61,
+    61,
+    61,
+    61
+  ]
+}
