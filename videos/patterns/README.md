@@ -7,6 +7,7 @@ Trois étapes, trois commandes :
 2. COMBINER   python3 agreger.py style.json DOSSIER1 DOSSIER2 …     → le « style » d'un créateur sur plusieurs vidéos
 3. APPLIQUER  python3 appliquer_pattern.py pattern.json NOS_RUSHS…  → projet Remotion, timeline DaVinci, recette CapCut
    VÉRIFIER   python3 comparer.py pattern.json notre/pattern.json   → conformité de notre montage, mesure par mesure
+4. REFAIRE    python3 remplir_modele.py pattern.json NOS_RUSHS… --musique NOTRE_MUSIQUE   → le même edit, case par case, avec nos images
 ```
 
 Pour récupérer une vidéo YouTube ou TikTok : `yt-dlp -f "bv*+ba/b" -o video.mp4 URL`
@@ -79,6 +80,35 @@ Dans le dossier de sortie :
 (`conformite.md` : chaque écart avec ce qu'il faut corriger). Options : `--navigateur CHEMIN` (Chrome déjà installé),
 `--node-modules DOSSIER` (réutiliser un projet Remotion existant), `--graine N` (autre tirage des mêmes règles).
 
+## 4. Refaire un edit avec nos images (modèle à cases)
+
+Pour un edit musical (TikTok, Shorts) : chaque plan de la vidéo analysée devient une **case** à remplir, décrite en
+**temps musicaux** (« 2 temps, sur le drop »), avec ce qu'elle doit montrer (cadrage, geste, mouvement, lumière), sa
+transition d'entrée, ses zooms, ses effets, ses masques, son texte et ses bruitages.
+
+```
+python3 remplir_modele.py pattern.json MES_RUSHS/ --musique ma-musique.mp3 --variantes 3 --textes "LEBRON|THE KING" --sortie edit [--rendu]
+python3 remplir_modele.py pattern.json --modele-seul                      # juste le modèle (modele.md) : la « fiche » de l'edit
+python3 remplir_modele.py --chercher "gros plan bras levés" MES_RUSHS/    # chercher un moment dans nos rushs
+```
+
+1. **Banque de rushs** : les rushs (fichiers ou dossiers entiers) sont passés en revue une fois : toutes les 0,5 s, qui
+   est là, le cadrage, le geste (bras levés, poing, mains sur la tête…), l'expression, le mouvement, la lumière, la
+   netteté, les coupes à l'intérieur du rush. Le résultat est gardé dans `.banque-rushs.json` : la fois suivante, c'est immédiat.
+2. **Recalage sur notre musique** : le drop de l'original tombe sur le drop de notre musique ; chaque case garde son
+   nombre de temps, donc sa durée suit notre tempo, et chaque coupe est aimantée au coup de grosse caisse le plus proche.
+   Sans `--musique`, les durées de l'original sont gardées.
+3. **Remplissage** : pour chaque case, le passage de nos rushs qui correspond le mieux, jamais deux fois le même
+   passage, le geste calé juste après la coupe (sur le temps), recadrage vers le sujet si le format change, ralenti si
+   le rush est trop court.
+4. **Variantes A/B** : `--variantes 3` fait 3 montages avec d'autres rushs dans les cases, mêmes coupes ;
+   `variantes.md` les compare.
+
+Dans `edit/` : `modele.md` (la fiche de l'edit), et pour chaque variante `remplissage.md` (quel rush dans quelle case,
+pourquoi, **la liste des plans à tourner** quand aucun rush ne colle, les textes à remplacer) avec les mêmes exports
+qu'à la section 3 (Remotion, DaVinci, CapCut, marqueurs). Les effets que le rendu ne fait pas encore tout seul
+(masques, velocity, néon…) sont listés en « effet à faire » avec leur timecode ; ils arrivent à l'étape suivante.
+
 ## Installation (une seule fois par ordinateur)
 
 | Où | Quoi faire |
@@ -104,6 +134,7 @@ modèles, l'outil marche quand même mais estime la voix au lieu de la transcrir
 | `video-test-effets.py` → `verifier_effets.py` | 34 s : les 13 effets d'image, chacun à un moment connu | **14 / 14** (aucune fausse détection) |
 | `video-test-effets2.py` → `verifier_effets2.py` | 20 s : texte qui suit une balle, kaléidoscope, shake sur les temps, cymbale inversée, musique normale et « slowed + reverb » | **6 / 6** |
 | `video-test-musique.py` → `verifier_musique.py` | musique à 128 BPM : intro étouffée, drop à l'ouverture du filtre, silence puis drop | **5 / 5** |
+| `verifier_modele.py` | Une fausse analyse d'edit (120 BPM, drop au temps 16) et une banque de rushs au contenu connu, remplie sur une musique à 95 BPM | **16 / 16** : drop sur le drop, durées au nouveau tempo, coupes sur les temps, bon rush par case, gestes calés, pas de doublon, transitions, textes, bruitages, variantes, recherche |
 | La même vidéo n° 2, abîmée | très compressée / caméra à la main / bruit et flou | **36 / 32 / 27 sur 42** (détail dans `verification_v2.md`) |
 | `video-test-rushs.py` | Faux rushs (face caméra + 2 illustrations + musique) pour tester `appliquer_pattern.py --rendu` de bout en bout | conformité de notre montage au pattern : **58 à 61 %** (`conformite-exemple.md`) ; rythme, coupes, débit, sous-titres, barre de progression justes |
 
@@ -122,6 +153,8 @@ modèles, l'outil marche quand même mais estime la voix au lieu de la transcrir
 - **Pas encore reconnus** : écho / traînées, parallaxe 2,5D (photo animée en profondeur), textes en 3D.
 - **Logos sur un sujet immobile** : un sponsor sur une combinaison qui ne bouge pas peut encore passer pour un texte ; ajoutez la marque dans `montage/marques.txt`.
 - **Masques non encore reconnus** : texte qui passe derrière un sujet sans changement de fond, sujet qui sort du cadre, clones ; un panneau blanc derrière un sujet peut être pris pour une silhouette.
+
+- **Remplissage** : l'outil ne voit que ce que MediaPipe reconnaît (personnes, cadrage, quelques gestes, expressions) ; il ne sait pas encore qui est la personne ni ce qu'elle fait (dunk, dépassement…). Une case « plan large » ne trouvera rien si tous vos rushs sont des gros plans : c'est dit dans « plans à tourner ».
 
 - **Grain fin** : effacé par la compression des plateformes, il n'est plus mesurable (seul point faux du test n° 2).
 - **Effets sonores sous la voix** : un bruit de clavier pendant qu'on parle n'est pas toujours repéré.

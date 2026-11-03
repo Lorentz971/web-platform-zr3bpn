@@ -48,6 +48,12 @@ def main():
     P = json.load(open(os.path.join(a.pattern, 'pattern.json') if os.path.isdir(a.pattern) else a.pattern))
     out = os.path.abspath(a.sortie); os.makedirs(out, exist_ok=True)
     plan = planif.construire(P, a.rushs, musique=a.musique, duree_max=a.duree, format_=a.format, graine=a.graine)
+    exporter(plan, out, a.pattern, rendu=a.rendu, navigateur=a.navigateur, node_modules=a.node_modules)
+
+
+def exporter(plan, out, pattern, rendu=False, navigateur=None, node_modules=None):
+    """Écrit tous les exports d'un plan de montage (et rend la vidéo avec Remotion si rendu=True)."""
+    os.makedirs(out, exist_ok=True)
     sfx = sfx_lib.ecrire(os.path.join(out, 'sfx'))
     json.dump(plan, open(os.path.join(out, 'plan-de-montage.json'), 'w'), ensure_ascii=False, indent=1)
     chemins = {r['nom']: r['chemin'] for r in plan['rushs']}
@@ -64,13 +70,13 @@ def main():
     exports.remotion(plan, rdir, os.path.join(HERE, 'remotion', 'PatternMontage.tsx'), chemins)
     print(f"\nPlan : {len(plan['clips'])} plans, {len(plan['illustrations'])} illustrations, {len(plan['transitions'])} transitions, {len(plan['zooms'])} zooms, "
           f"{len(plan['sous_titres'])} sous-titres, {len(plan['effets'])} effets sonores, {plan['duree_s']:.1f} s → {out}")
-    if a.rendu:
+    if rendu:
         nm = os.path.join(rdir, 'node_modules')
-        if a.node_modules and not os.path.exists(nm): os.symlink(os.path.abspath(a.node_modules), nm)
+        if node_modules and not os.path.exists(nm): os.symlink(os.path.abspath(node_modules), nm)
         if not os.path.exists(nm): subprocess.run(['npm', 'install', '--no-audit', '--no-fund'], cwd=rdir, check=True)
         os.makedirs(os.path.join(rdir, 'out'), exist_ok=True)
         subprocess.run(['npx', 'remotion', 'render', 'src/index.ts', 'PatternMontage', 'out/montage.mp4', '--log=error']
-                       + ([f'--browser-executable={a.navigateur}'] if a.navigateur else []), cwd=rdir, check=True)
+                       + ([f'--browser-executable={navigateur}'] if navigateur else []), cwd=rdir, check=True)
         brut = os.path.join(rdir, 'out', 'montage.mp4'); video = os.path.join(out, 'montage.mp4')
         L = plan['volume_cible_lufs']                       # volume général calé sur celui du pattern
         gain = 0.0
@@ -82,7 +88,7 @@ def main():
         print(f'Vidéo rendue : {video} (volume normalisé à {L} LUFS)')
         print('Boucle de conformité : ré-analyse de notre montage…')
         subprocess.run([sys.executable, os.path.join(HERE, 'analyse_montage.py'), video, os.path.join(out, 'analyse-du-rendu')], check=True)
-        ref = os.path.join(a.pattern, 'pattern.json') if os.path.isdir(a.pattern) else a.pattern
+        ref = os.path.join(pattern, 'pattern.json') if os.path.isdir(pattern) else pattern
         subprocess.run([sys.executable, os.path.join(HERE, 'comparer.py'), ref, os.path.join(out, 'analyse-du-rendu', 'pattern.json'), os.path.join(out, 'conformite.md')], check=True)
 
 

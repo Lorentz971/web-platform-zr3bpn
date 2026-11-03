@@ -6,7 +6,7 @@ import {AbsoluteFill, Audio, Easing, OffthreadVideo, Sequence, interpolate, spri
 import '@fontsource/montserrat/900.css';
 import data from './montage-data.json';
 
-type Clip = {src: string; nom: string; role: string; src_in: number; src_out: number; t0: number; t1: number; zoom: number; broll?: boolean; transition_entree?: {type: string; images: number}};
+type Clip = {src: string; nom: string; role: string; src_in: number; src_out: number; t0: number; t1: number; zoom: number; broll?: boolean; transition_entree?: {type: string; images: number}; vitesse?: number; centre_x_pct?: number};
 type Zoom = {t0: number; dur_s: number; de: number; a: number; courbe: string; plan: number};
 const D: any = data;
 const fps: number = D.fps;
@@ -89,8 +89,8 @@ const Plan: React.FC<{clip: Clip; idx: number; muted?: boolean; handle: number}>
           <feGaussianBlur stdDeviation={`${(st as any)._mb} 0`} /></filter></svg>
       ) : null}
       <AbsoluteFill style={{transform: `scale(${z})`, ...grade()}}>
-        <OffthreadVideo src={media(clip.nom)} startFrom={Math.max(0, F(clip.src_in) - handle)} muted={muted}
-          style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+        <OffthreadVideo src={media(clip.nom)} startFrom={Math.max(0, F(clip.src_in) - handle)} muted={muted} playbackRate={clip.vitesse || 1}
+          style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${clip.centre_x_pct ?? 50}% 50%`}} />
       </AbsoluteFill>
     </AbsoluteFill>
   );
@@ -205,7 +205,7 @@ export const PatternMontage: React.FC = () => {
       {D.effets.map((e: any, i: number) => (
         <Sequence key={'e' + i} from={F(e.t)} durationInFrames={F(2)}><Audio src={staticFile(e.fichier)} volume={0.5} /></Sequence>
       ))}
-      {m ? <Audio src={media(m.nom)} volume={(fr) => volMusique(fr)} /> : null}
+      {m ? <Audio src={media(m.nom)} startFrom={F(m.src_in || 0)} volume={(fr) => volMusique(fr)} /> : null}
     </AbsoluteFill>
   );
 };

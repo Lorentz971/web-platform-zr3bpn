@@ -32,10 +32,12 @@ def srt(plan, path):
 def marqueurs(plan, path):
     rows = []
     for i, c in enumerate(plan['clips']):
-        rows.append((c['t0'], 'coupe', f"plan {i + 1} : {c['nom']} {c['src_in']:.2f}–{c['src_out']:.2f} s" + (f", cadre ×{c['zoom']}" if c['zoom'] != 1 else '')))
+        rows.append((c['t0'], 'coupe', f"plan {i + 1} : {c['nom']} {c['src_in']:.2f}–{c['src_out']:.2f} s" + (f", cadre ×{c['zoom']}" if c['zoom'] != 1 else '')
+                     + (f", ralenti ×{c['vitesse']}" if c.get('vitesse') else '') + (f" (case {c['case']} du modèle)" if c.get('case') else '')))
+        if c.get('a_faire'): rows.append((c['t0'], 'effet à faire', ', '.join(c['a_faire'])))
     for b in plan['illustrations']: rows.append((b['t0'], 'illustration', f"{b['nom']} {b['src_in']:.2f}–{b['src_out']:.2f} s par-dessus la voix, jusqu'à {b['t1']:.2f} s"))
     for t in plan['transitions']: rows.append((t['t'], 'transition', f"{t['type']} ({t['images']} images)"))
-    for z in plan['zooms']: rows.append((z['t0'], 'zoom', f"punch-in ×{z['de']} → ×{z['a']} en {z['dur_s']} s sur « {z['mot']} » ({z['courbe']})"))
+    for z in plan['zooms']: rows.append((z['t0'], 'zoom', f"zoom ×{z['de']} → ×{z['a']} en {z['dur_s']} s" + (f" sur « {z['mot']} »" if z.get('mot') else '') + f" ({z['courbe']})"))
     for e in plan['effets']: rows.append((e['t'], 'effet sonore', e['type']))
     for o in plan['incrustations']:
         if 't0' in o: rows.append((o['t0'], 'incrustation', f"{o['type']} jusqu'à {o['t1']:.2f} s, centre à {o['centre_pct']} % de l'écran, entrée : {o['entree']}" + (f", texte « {o['texte']} »" if o.get('texte') else '')))
@@ -119,8 +121,8 @@ def fcpxml(plan, path, chemins):
             v = quoteattr('Zoom ×%s → ×%s (%s)' % (z['de'], z['a'], z['courbe']))
             inner.append(f'        <marker start="{R(loc(z["t0"]))}" duration="{R(1 / fps)}" value={v}/>')
         if i == 0 and plan.get('musique'):
-            m = plan['musique']; mid = asset(m['nom'], plan['duree_s'] + 1, video=False)
-            inner.append(f'        <asset-clip ref="{mid}" lane="-2" offset="{R(c["src_in"])}" start="0s" duration="{R(plan["duree_s"])}" name={quoteattr(m["nom"])} audioRole="music">'
+            m = plan['musique']; mid = asset(m['nom'], plan['duree_s'] + 1 + (m.get('src_in') or 0), video=False)
+            inner.append(f'        <asset-clip ref="{mid}" lane="-2" offset="{R(c["src_in"])}" start="{R(m.get("src_in") or 0)}" duration="{R(plan["duree_s"])}" name={quoteattr(m["nom"])} audioRole="music">'
                          f'<adjust-volume amount="{m["niveau_db"]}dB"/></asset-clip>')
         spine.append(f'      <asset-clip ref="{rid}" offset="{R(c["t0"])}" start="{R(c["src_in"])}" duration="{R(c["t1"] - c["t0"])}" name={quoteattr(c["nom"])}' +
                      ('>\n' + '\n'.join(inner) + '\n      </asset-clip>' if inner else '/>'))
@@ -175,8 +177,16 @@ def recette_md(plan, path, rows):
         L.append(f"8. **Effets sonores** : {len(plan['effets'])} effets, aux lignes « effet sonore » (fichiers dans `sfx/`).")
     if plan.get('musique'):
         m = plan['musique']
-        L.append(f"9. **Musique** : {m['nom']} ({m['tempo_bpm']} BPM) à {m['niveau_db']} dB, baissée de **{m['baisse_sous_voix_db']} dB** quand on parle "
-                 '(dans CapCut : « Atténuation automatique » / ducking, ou images clés de volume).')
+        deb = f", à partir de **{m['src_in']:.2f} s** de la musique (coupez le début)" if m.get('src_in') else ''
+        if m.get('passages_voix'):
+            L.append(f"9. **Musique** : {m['nom']} ({m['tempo_bpm']} BPM){deb} à {m['niveau_db']} dB, baissée de **{m['baisse_sous_voix_db']} dB** quand on parle "
+                     '(dans CapCut : « Atténuation automatique » / ducking, ou images clés de volume).')
+        else:
+            L.append(f"9. **Musique** : {m['nom']} ({m['tempo_bpm']} BPM){deb}, à plein volume (pas de voix)" + (f" ; drop à {', '.join(f'{d:.2f} s' for d in m.get('drops_s', []))} du montage" if m.get('drops_s') else '') + '.')
+    af = [c for c in plan['clips'] if c.get('a_faire')]
+    if af:
+        L.append(f"9 bis. **Effets du modèle à faire à la main** (le rendu automatique les ajoutera à l'étape suivante) : lignes « effet à faire » — "
+                 + ', '.join(sorted({x for c in af for x in c['a_faire']})) + '.')
     if any(o['type'] == 'barre de progression' for o in plan['incrustations']): L.append("10. **Barre de progression** en haut de l'écran sur toute la durée.")
     g = [o for o in plan['incrustations'] if 't0' in o]
     if g: L.append(f"10 bis. **Incrustations** : {len(g)} éléments ({', '.join(sorted(set(o['type'] for o in g)))}), aux lignes « incrustation » (position, texte, entrée).")
