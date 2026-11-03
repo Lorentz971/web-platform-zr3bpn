@@ -176,6 +176,7 @@ def recette_md(plan, path, rows):
         L.append(f"9. **Musique** : {m['nom']} ({m['tempo_bpm']} BPM) à {m['niveau_db']} dB, baissée de **{m['baisse_sous_voix_db']} dB** quand on parle "
                  '(dans CapCut : « Atténuation automatique » / ducking, ou images clés de volume).')
     if plan['incrustations']: L.append("10. **Barre de progression** en haut de l'écran sur toute la durée.")
+    L.append(f"11. **Volume** : à l'export, normalisez à **{plan['volume_cible_lufs']} LUFS** (volume intégré mesuré sur la vidéo de référence).")
     if et:
         L += ['', '## Étalonnage', f"Cible : luminosité {et['cible'].get('luminosite')}, contraste {et['cible'].get('contraste')}, saturation {et['cible'].get('saturation')} "
               f"(nos rushs : {et['nos_rushs']}). Réglages : luminosité ×{et['luminosite_x']}, contraste ×{et['contraste_x']}, saturation ×{et['saturation_x']}"
@@ -194,10 +195,10 @@ def remotion(plan, dossier, modele_tsx, chemins, lier=True):
         d = os.path.join(pub, 'media', nom)
         if os.path.lexists(d): os.remove(d)
         try:
-            if lier: os.symlink(os.path.abspath(p), d)
+            if lier: os.link(os.path.abspath(p), d)                 # lien dur : pas de copie, et Remotion le lit (pas un raccourci)
             else: shutil.copy(p, d)
         except OSError: shutil.copy(p, d)
-    data = {k: plan[k] for k in ('fps', 'largeur', 'hauteur', 'duree_s', 'clips', 'illustrations', 'transitions', 'zooms', 'sous_titres',
+    data = {k: plan[k] for k in ('fps', 'largeur', 'hauteur', 'duree_s', 'volume_cible_lufs', 'clips', 'illustrations', 'transitions', 'zooms', 'sous_titres',
                                  'style_sous_titres', 'effets', 'musique', 'incrustations', 'etalonnage')}
     data['clips'] = [{k: v for k, v in c.items() if k != 'mots'} for c in data['clips']]
     data['couleur_surlignage_hex'] = _hex((plan.get('style_sous_titres') or {}).get('couleur_surlignage'))

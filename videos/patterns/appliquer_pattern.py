@@ -32,6 +32,7 @@ def main():
     ap.add_argument('--musique'); ap.add_argument('--duree', type=float); ap.add_argument('--format', choices=['vertical', 'horizontal', 'carre'])
     ap.add_argument('--sortie', default='montage'); ap.add_argument('--rendu', action='store_true'); ap.add_argument('--graine', type=int, default=0)
     ap.add_argument('--node-modules', help='dossier node_modules existant à réutiliser (évite npm install)')
+    ap.add_argument('--navigateur', help='Chrome / Chromium à utiliser pour le rendu Remotion (sinon Remotion télécharge le sien)')
     a = ap.parse_args()
     P = json.load(open(os.path.join(a.pattern, 'pattern.json') if os.path.isdir(a.pattern) else a.pattern))
     out = os.path.abspath(a.sortie); os.makedirs(out, exist_ok=True)
@@ -57,8 +58,12 @@ def main():
         if a.node_modules and not os.path.exists(nm): os.symlink(os.path.abspath(a.node_modules), nm)
         if not os.path.exists(nm): subprocess.run(['npm', 'install', '--no-audit', '--no-fund'], cwd=rdir, check=True)
         os.makedirs(os.path.join(rdir, 'out'), exist_ok=True)
-        subprocess.run(['npx', 'remotion', 'render', 'src/index.ts', 'PatternMontage', 'out/montage.mp4', '--log=error'], cwd=rdir, check=True)
-        video = os.path.join(rdir, 'out', 'montage.mp4'); print('Vidéo rendue :', video)
+        subprocess.run(['npx', 'remotion', 'render', 'src/index.ts', 'PatternMontage', 'out/montage.mp4', '--log=error']
+                       + ([f'--browser-executable={a.navigateur}'] if a.navigateur else []), cwd=rdir, check=True)
+        brut = os.path.join(rdir, 'out', 'montage.mp4'); video = os.path.join(out, 'montage.mp4')
+        L = plan['volume_cible_lufs']                       # volume général calé sur celui du pattern
+        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', brut, '-c:v', 'copy', '-af', f'loudnorm=I={L}:TP=-1.0:LRA=11', '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', video], check=True)
+        print(f'Vidéo rendue : {video} (volume normalisé à {L} LUFS)')
         print('Boucle de conformité : ré-analyse de notre montage…')
         subprocess.run([sys.executable, os.path.join(HERE, 'analyse_montage.py'), video, os.path.join(out, 'analyse-du-rendu')], check=True)
         ref = os.path.join(a.pattern, 'pattern.json') if os.path.isdir(a.pattern) else a.pattern

@@ -164,10 +164,21 @@ def analyse(video, events, moves, overlays):
     keep = edge.copy()
     for c in cutouts: keep &= ~((tt >= c['start_s'] - 0.2) & (tt <= c['start_s'] + c['dur_s'] + 0.2))
     m_in, m_out = mus[vm & keep], mus[~vm & keep]
-    out['baisse_musique_sous_voix_db'] = round(float(np.median(m_out) - np.median(m_in)), 1) if len(m_in) > 20 and len(m_out) > 20 else None
+    d_stem = float(np.median(m_out) - np.median(m_in)) if len(m_in) > 20 and len(m_out) > 20 else None
     out['coupures_musique'] = cutouts
     # ---- effets sonores
     out['effets_sonores'] = sfx(m22, 22050, beat_t, vseg, events, moves)
+    # 2e estimation de la baisse, sans séparation : les basses (30-150 Hz) du mélange, où la voix est faible,
+    # hors effets sonores. Utile quand la séparation voix / musique échoue (voix très traitée, voix de synthèse).
+    Sm, fq, _ = _stft_db(m22, 22050, hop)
+    bass = db(Sm[(fq >= 30) & (fq <= 150)].sum(0) + 1e-12)
+    away = np.ones_like(tt, bool)
+    for x in out['effets_sonores']: away &= np.abs(tt - x['t']) > 0.6
+    b_in, b_out = bass[vm & keep & away], bass[~vm & keep & away]
+    d_bass = float(np.median(b_out) - np.median(b_in)) if len(b_in) > 20 and len(b_out) > 20 else None
+    ests = [d for d in (d_stem, d_bass) if d is not None]
+    out['baisse_musique_sous_voix_db'] = round(max(ests), 1) if ests else None
+    out['baisse_musique_estimations_db'] = dict(piste_musique_separee=None if d_stem is None else round(d_stem, 1), basses_du_melange=None if d_bass is None else round(d_bass, 1))
     out['volume_db_par_seconde'] = [round(float(np.mean(rms_db[(tt >= s) & (tt < s + 1)])), 1) for s in range(int(tt[-1]))]
     # ---- coupes et parole
     if 'phrases' in out and hard:

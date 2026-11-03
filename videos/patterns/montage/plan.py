@@ -168,13 +168,13 @@ def construire(P, rushes, musique=None, duree_max=None, format_=None, graine=0, 
     tc = R.get('types_de_coupe_pct') or {}
     zc = (_ref(R, 'recadrage_zoom_pct', 12) or 12) / 100
     part_recadrage = (tc.get('coupe avec recadrage', 0) + 0.5 * tc.get('jump cut', 0)) / 100
-    niveau = 0
-    for c in clips:
-        if c['role'] == 'A' and not c['debut_de_piece'] and rng.random() < max(part_recadrage, 0.0):
-            niveau = 1 - niveau
-        elif c['role'] == 'A' and c['debut_de_piece'] and part_recadrage > 0.3:
-            niveau = 1 - niveau
-        c['zoom'] = round(1 + zc * niveau, 3); c['zoom_fin'] = c['zoom']
+    n_rec = int(round(part_recadrage * max(0, len(clips) - 1)))
+    bascules = set(np.round(np.linspace(1, len(clips) - 1, n_rec + 2)[1:-1]).astype(int).tolist()) if n_rec else set()
+    niveau = 0                                                   # changements de cadre répartis régulièrement, au nombre voulu
+    for i, c in enumerate(clips):
+        # une coupe au milieu d'un passage continu est invisible si le cadre ne change pas : on change le cadre
+        if c['role'] == 'A' and i > 0 and (i in bascules or not c['debut_de_piece']): niveau = 1 - niveau
+        c['zoom'] = round(1 + zc * niveau, 3)
 
     # 5) zooms animés (punch-in / poussée lente) sur les mots forts
     nz = int(round(_ref(R, 'zooms_par_minute', 0) * duree / 60))
@@ -200,17 +200,18 @@ def construire(P, rushes, musique=None, duree_max=None, format_=None, graine=0, 
     part_b = (100 - rep.get('face caméra', 100 if A else 0)) / 100 if rep else 0
     broll = []
     if A and B and part_b > 0.05:
-        cible = part_b * duree; couvert = 0.0; bi, bpos = 0, 0.0
+        cible = part_b * duree; couvert = 0.0; bi = 0; bpos = {r['chemin']: 0.0 for r in B}
         ordre = sorted(range(1, len(clips)), key=lambda i: (i % 3 != 1, rng.random()))   # un plan sur trois en priorité, jamais le premier
         for i in ordre:
             if couvert >= cible: break
             c = clips[i]; d = c['t1'] - c['t0']
             if d < 0.5: continue
-            r = B[bi % len(B)]
-            if bpos + d > r['duree_s']: bi += 1; bpos = 0.0; r = B[bi % len(B)]
+            r = B[bi % len(B)]; bi += 1                          # on alterne les illustrations, sans jamais reprendre le même passage
             if d > r['duree_s']: continue
-            broll.append(dict(src=r['chemin'], nom=r['nom'], src_in=round(bpos, 3), src_out=round(bpos + d, 3), t0=c['t0'], t1=c['t1'], plan=i))
-            bpos += d; couvert += d
+            p0 = bpos[r['chemin']]
+            if p0 + d > r['duree_s']: p0 = 0.0
+            broll.append(dict(src=r['chemin'], nom=r['nom'], src_in=round(p0, 3), src_out=round(p0 + d, 3), t0=c['t0'], t1=c['t1'], plan=i))
+            bpos[r['chemin']] = p0 + d + 0.7; couvert += d
         broll.sort(key=lambda x: x['t0'])
 
     # 7) transitions aux changements de passage (fin de phrase / long silence)
@@ -232,17 +233,18 @@ def construire(P, rushes, musique=None, duree_max=None, format_=None, graine=0, 
     subs = []
     if st and any(c['mots'] for c in clips):
         n = max(1, int(round(st.get('mots_par_sous_titre') or 3)))
+        tw = []                                                   # mots replacés sur la ligne de temps du montage
         for c in clips:
-            ws = c['mots']; grp = []
-            for k, w in enumerate(ws):
-                grp.append(w)
-                fin_phrase = w['w'].endswith(('.', '!', '?', ','))
-                if len(grp) >= n or fin_phrase or k == len(ws) - 1 or ws[k + 1]['t'] - w['fin'] > 0.25:
-                    t0 = c['t0'] + grp[0]['t'] - c['src_in']; t1 = c['t0'] + min(grp[-1]['fin'], c['src_out']) - c['src_in']
-                    mots = [dict(w=x['w'], t0=round(c['t0'] + x['t'] - c['src_in'], 3), t1=round(c['t0'] + min(x['fin'], c['src_out']) - c['src_in'], 3)) for x in grp]
-                    hi = max(range(len(grp)), key=lambda q: len(grp[q]['w'].strip('.,!?'))) if (st.get('part_avec_mot_surligne_pct') or 0) >= 40 else None
-                    subs.append(dict(t0=round(max(t0, c['t0']), 3), t1=round(max(t1, t0 + 0.2), 3), texte=' '.join(x['w'] for x in grp), mots=mots, mot_surligne=hi))
-                    grp = []
+            for x in c['mots']:
+                tw.append(dict(w=x['w'], t0=round(c['t0'] + x['t'] - c['src_in'], 3), t1=round(c['t0'] + min(x['fin'], c['src_out']) - c['src_in'], 3)))
+        grp = []
+        for k, w in enumerate(tw):
+            grp.append(w)
+            fin_phrase = w['w'].endswith(('.', '!', '?'))
+            if len(grp) >= n or fin_phrase or k == len(tw) - 1 or tw[k + 1]['t0'] - w['t1'] > 0.35:
+                hi = max(range(len(grp)), key=lambda q: len(grp[q]['w'].strip('.,!?'))) if (st.get('part_avec_mot_surligne_pct') or 0) >= 40 else None
+                subs.append(dict(t0=grp[0]['t0'], t1=round(max(grp[-1]['t1'], grp[0]['t0'] + 0.25), 3), texte=' '.join(x['w'] for x in grp), mots=list(grp), mot_surligne=hi))
+                grp = []
         for a_, b_ in zip(subs, subs[1:]):                        # pas de trou d'une fraction de seconde entre deux sous-titres
             if 0 < b_['t0'] - a_['t1'] < 0.3: a_['t1'] = b_['t0']
         anim = max((st.get('animations') or {'apparition sèche': 1}).items(), key=lambda x: x[1])[0]
@@ -285,7 +287,7 @@ def construire(P, rushes, musique=None, duree_max=None, format_=None, graine=0, 
                     if voix and a_ - voix[-1][1] < 0.4: voix[-1][1] = round(b_, 3)
                     else: voix.append([round(a_, 3), round(b_, 3)])
         mus = dict(src=os.path.abspath(musique), nom=os.path.basename(musique), tempo_bpm=round(bpm), temps_s=[round(b, 3) for b in beats if b < duree],
-                   niveau_db=-18.0, baisse_sous_voix_db=float(_ref(R, 'musique_baissee_sous_voix_db', 10) or 10), passages_voix=voix)
+                   niveau_db=-12.0, baisse_sous_voix_db=float(_ref(R, 'musique_baissee_sous_voix_db', 10) or 10), passages_voix=voix)
 
     # 11) incrustations et étalonnage
     incr = []
@@ -301,7 +303,8 @@ def construire(P, rushes, musique=None, duree_max=None, format_=None, graine=0, 
                     saturation_x=round(float(np.clip(img.get('saturation', cur['saturation']) / max(cur['saturation'], 1), 0.5, 1.8)), 2),
                     vignettage=img.get('vignettage', 0), ombres=img.get('ombres'), hautes_lumieres=img.get('hautes_lumieres'))
     for c in clips: c.pop('debut_de_piece', None)
-    return dict(version=1, pattern_source=R.get('source') or 'style combiné', fps=fps, largeur=W, hauteur=H, format=fmt, duree_s=duree,
+    lufs = R.get('lufs'); lufs = float(np.clip(lufs, -24, -9)) if isinstance(lufs, (int, float)) else -14.0
+    return dict(version=1, pattern_source=R.get('source') or 'style combiné', volume_cible_lufs=round(lufs, 1), fps=fps, largeur=W, hauteur=H, format=fmt, duree_s=duree,
                 clips=clips, illustrations=broll, transitions=transitions, zooms=zooms, sous_titres=subs, style_sous_titres=style,
                 effets=effets, musique=mus, incrustations=incr, etalonnage=etal, rushs=[{k: v for k, v in i.items() if k != 'mots'} for i in infos],
                 recette=R)

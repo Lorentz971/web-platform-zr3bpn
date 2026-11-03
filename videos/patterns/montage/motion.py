@@ -121,7 +121,14 @@ def detect(S, shots, exclude):
         for i, j in seg(act, 20):
             cuts_ = [k for k in range(i + 1, j + 1) if jump[k] and not jump[k - 1]]
             bounds = [i] + cuts_ + [j + 1]
-            pieces += [(p0, p1 - 1) for p0, p1 in zip(bounds, bounds[1:]) if p1 - p0 >= 12]
+            pcs = [(p0, p1 - 1) for p0, p1 in zip(bounds, bounds[1:])]
+            for (i1, j1), (i2, j2) in zip(pcs, pcs[1:]):         # saut net de vitesse entre deux morceaux = ralenti / accéléré
+                if j1 - i1 >= 8 and j2 - i2 >= 8:
+                    v1_, v2_ = float(np.median(v[i1:j1 + 1])), float(np.median(v[i2:j2 + 1])); ratio = v2_ / max(v1_, 1e-6)
+                    if ratio < 0.7 or ratio > 1.4:
+                        moves.append(dict(type='ralenti' if ratio < 1 else 'accéléré', start_s=T(a + 1 + i2), vitesse_avant_px_img=round(v1_, 1),
+                                          vitesse_apres_px_img=round(v2_, 1), facteur=round(ratio, 2)))
+            pieces += [(p0, p1) for p0, p1 in pcs if p1 - p0 + 1 >= 12]
         for i, j in pieces:
             seg_v = smooth(v[i:j + 1], 5); tt = np.arange(len(seg_v))
             # marche arrière : le sujet repart dans l'autre sens en repassant par les mêmes images

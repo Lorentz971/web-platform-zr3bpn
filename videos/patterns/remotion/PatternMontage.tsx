@@ -6,17 +6,24 @@ import {AbsoluteFill, Audio, Easing, OffthreadVideo, Sequence, interpolate, spri
 import '@fontsource/montserrat/900.css';
 import data from './montage-data.json';
 
-type Clip = {src: string; nom: string; role: string; src_in: number; src_out: number; t0: number; t1: number; zoom: number; transition_entree?: {type: string; images: number}};
+type Clip = {src: string; nom: string; role: string; src_in: number; src_out: number; t0: number; t1: number; zoom: number; broll?: boolean; transition_entree?: {type: string; images: number}};
 type Zoom = {t0: number; dur_s: number; de: number; a: number; courbe: string; plan: number};
 const D: any = data;
 const fps: number = D.fps;
 const F = (t: number) => Math.round(t * fps);
 const media = (nom: string) => staticFile('media/' + nom);
 
+// image visible à chaque plan : l'illustration (B-roll) quand il y en a une, sinon le rush principal
+const VIS: Clip[] = (D.clips as Clip[]).map((c, i) => {
+  const b = (D.illustrations as any[]).find((x) => x.plan === i);
+  return b ? {...c, nom: b.nom, src_in: b.src_in, src_out: b.src_out, zoom: 1, broll: true} : c;
+});
+
 const easeFor = (courbe: string) => (courbe || '').includes('ease-in') ? Easing.in(Easing.cubic) : (courbe || '').includes('constante') ? Easing.linear : Easing.out(Easing.cubic);
 
 // zoom total d'un plan à l'instant f (cadrage fixe + punch-in animés)
 const zoomAt = (clip: Clip, idx: number, f: number) => {
+  if (clip.broll) return 1;
   let z = clip.zoom;
   for (const zz of D.zooms as Zoom[]) {
     if (zz.plan !== idx) continue;
@@ -48,12 +55,26 @@ const entree = (typ: string, n: number, local: number, W: number): React.CSSProp
   }
 };
 
+// effet de sortie du plan précédent, pendant que le suivant entre (panoramique filé, glissement : les deux images bougent ensemble)
+const sortie = (typ: string, n: number, k: number, W: number): React.CSSProperties => {
+  const p = Math.min(1, Math.max(0, k / Math.max(1, n))); const e = Easing.out(Easing.cubic)(p);
+  if (typ === 'glissement') return {transform: `translateX(${-e * W}px)`};
+  if (typ === 'panoramique filé') return {transform: `translateX(${-e * W}px)`, filter: `blur(${Math.sin(Math.PI * p) * 18}px)`};
+  if (typ === 'zoom de transition') return {transform: `scale(${1 + e * 0.8})`, filter: `blur(${e * 14}px)`};
+  return {};
+};
+const OVERLAP = ['fondu enchaîné', 'rideau', 'glissement', 'panoramique filé', 'zoom de transition', 'rotation de transition'];
+
 const Plan: React.FC<{clip: Clip; idx: number; muted?: boolean; handle: number}> = ({clip, idx, muted, handle}) => {
   const f = useCurrentFrame();                     // temps local à la séquence
   const {width} = useVideoConfig();
   const fg = f + F(clip.t0) - handle;             // temps global
   const tr = clip.transition_entree;
-  const st: React.CSSProperties = tr ? entree(tr.type, tr.images, f, width) : {};
+  const nxt: Clip | undefined = VIS[idx + 1];
+  const tn = nxt && nxt.transition_entree && OVERLAP.includes(nxt.transition_entree.type) ? nxt.transition_entree : undefined;
+  const hn = tn ? Math.min(tn.images, F(nxt!.src_in)) : 0;
+  let st: React.CSSProperties = tr ? entree(tr.type, tr.images, f, width) : {};
+  if (tn && hn > 0 && fg >= F(nxt!.t0) - hn) st = {...st, ...sortie(tn.type, hn, fg - (F(nxt!.t0) - hn), width)};
   const z = zoomAt(clip, idx, fg);
   return (
     <AbsoluteFill style={{overflow: 'hidden', ...st}}>
@@ -97,7 +118,7 @@ const SousTitre: React.FC<{s: any}> = ({s}) => {
 
 const Barre: React.FC = () => {
   const f = useCurrentFrame(); const {durationInFrames, height} = useVideoConfig();
-  return <div style={{position: 'absolute', top: 0, left: 0, height: Math.max(6, height * 0.006), width: `${(f / durationInFrames) * 100}%`, background: '#ff2d2d'}} />;
+  return <div style={{position: 'absolute', top: 0, left: 0, height: Math.max(8, height * 0.012), width: `${(f / durationInFrames) * 100}%`, background: '#ff2d2d'}} />;
 };
 
 export const PatternMontage: React.FC = () => {
@@ -116,20 +137,18 @@ export const PatternMontage: React.FC = () => {
   };
   return (
     <AbsoluteFill style={{background: 'black'}}>
-      {clips.map((c, i) => {
-        const tr = c.transition_entree; const overlap = tr && ['fondu enchaîné', 'rideau', 'glissement', 'panoramique filé', 'zoom de transition', 'rotation de transition'].includes(tr.type);
+      {VIS.map((c, i) => {
+        const tr = c.transition_entree; const overlap = tr && OVERLAP.includes(tr.type);
         const handle = overlap ? Math.min(tr!.images, F(c.src_in)) : 0;   // le plan entrant commence un peu avant la coupe (poignée)
         return (
           <Sequence key={'c' + i} from={F(c.t0) - handle} durationInFrames={Math.max(1, F(c.t1) - F(c.t0) + handle)}>
-            <Plan clip={c} idx={i} handle={handle} />
+            <Plan clip={c} idx={i} handle={handle} muted />
           </Sequence>
         );
       })}
-      {D.illustrations.map((b: any, i: number) => (
-        <Sequence key={'b' + i} from={F(b.t0)} durationInFrames={Math.max(1, F(b.t1) - F(b.t0))}>
-          <AbsoluteFill style={grade()}>
-            <OffthreadVideo src={media(b.nom)} startFrom={F(b.src_in)} muted style={{width: '100%', height: '100%', objectFit: 'cover'}} />
-          </AbsoluteFill>
+      {clips.filter((c) => c.role === 'A').map((c, i) => (            // la voix continue sous les illustrations
+        <Sequence key={'v' + i} from={F(c.t0)} durationInFrames={Math.max(1, F(c.t1) - F(c.t0))}>
+          <Audio src={media(c.nom)} startFrom={F(c.src_in)} />
         </Sequence>
       ))}
       {D.transitions.filter((t: any) => t.type === 'flash blanc' || t.type === 'fondu au noir').map((t: any, i: number) => (

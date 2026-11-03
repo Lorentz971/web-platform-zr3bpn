@@ -26,7 +26,17 @@ def detect(S):
         elif ncc_c[k] < 0.55: brk[k] = True
         elif rows[k]['M'] and abs(math.log(sc[k])) > math.log(1.25): brk[k] = True; reframe[k] = sc[k]
         elif rows[k]['M'] and abs(math.log(sc[k])) > math.log(1.06) and calm(k - 1) and calm(k + 1): brk[k] = True; reframe[k] = sc[k]
-    grad = (hd > 0.012) & (ncc_c < 0.995) & ~brk
+    # changement progressif : nettement au-dessus de l'agitation habituelle du passage (images qui bougent sans arrêt)
+    def _calme(lo, hi):                                         # agitation habituelle, hors ruptures
+        w = hd[max(0, lo):max(0, hi)][~brk[max(0, lo):max(0, hi)]]
+        return float(np.median(w)) if len(w) >= 4 else None
+    hd_loc = np.zeros(NF)
+    for k in range(NF):                                         # fenêtres à gauche et à droite, sans la transition elle-même
+        v = [x for x in (_calme(k - 30, k - 8), _calme(k + 9, k + 31)) if x is not None]
+        hd_loc[k] = min(v) if v else 0.0
+    grad = (hd > np.maximum(0.012, 3 * hd_loc)) & (ncc_c < 0.995) & ~brk
+    rb_loc = np.array([min(np.median(rbs[max(0, k - 30):max(1, k - 8)]), np.median(rbs[min(NF - 1, k + 9):min(NF, k + 31)]) if k + 9 < NF else 9) for k in range(NF)])
+    grad |= (rbs > np.maximum(0.4, 4 * rb_loc)) & (ncc_c < 0.95)      # décalage rouge / bleu soudain (glitch)
     base_lap = lambda a: np.median(lap[max(0, a - 6):max(1, a - 1)])
     spinf = np.abs(rot) > 8
     blurz = np.zeros(NF, bool)
@@ -40,6 +50,8 @@ def detect(S):
 
     def add(typ, a, b, **kw):
         events.append(dict(type=typ, start_s=T(a), dur_frames=b - a + 1, dur_s=round((b - a + 1) / FPS, 2), **kw)); used[a:b + 1] = True
+        for k in (a - 1, b + 1, b + 2):                         # la coupe qui ouvre ou ferme la transition en fait partie
+            if 0 <= k < NF and brk[k] and not reframe.get(k): used[k] = True
 
     # flashs et fondus au noir
     for m, name in [(flash, 'flash blanc'), (black, 'fondu au noir')]:
@@ -149,7 +161,8 @@ def detect(S):
             shifts.append(best[1])
         if L >= 3 and all(abs(s_) > 8 for s_ in shifts) and (np.all(np.diff(shifts) > 0) or np.all(np.diff(shifts) < 0)):
             add('glissement', a, b, direction='vers la gauche' if shifts[-1] > 0 else 'vers la droite'); continue
-        if L >= 4 and brk[a:b + 1].sum() >= 3:
+        cons = max((q - p + 1 for p, q in runs(brk[a:b + 1])), default=0)
+        if L >= 4 and cons >= 3:                               # sinon : ce sont des coupes, traitées plus bas
             add('transition (autre)', a, b)
     # coupes sèches restantes (avec ou sans recadrage)
     orb = cv2.ORB_create(1500)
