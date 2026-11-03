@@ -31,6 +31,9 @@ def main():
     ap.add_argument('--duree', type=float); ap.add_argument('--format', choices=['vertical', 'horizontal', 'carre'])
     ap.add_argument('--sortie', default='edit'); ap.add_argument('--rendu', action='store_true'); ap.add_argument('--modele-seul', action='store_true')
     ap.add_argument('--chercher', help='recherche libre dans la banque de rushs')
+    ap.add_argument('--cadrage', choices=['auto', 'recadre', 'flou'], default='auto', help="rush d'un autre format : recadré sur le sujet, ou entier sur fond flouté (auto : selon la perte)")
+    ap.add_argument('--zooms', choices=['doux', 'garder', 'aucun'], default='doux', help="zooms de l'original : doux (par défaut), garder, aucun")
+    ap.add_argument('--melange', choices=['libre', 'ordre', 'un'], default='libre', help="libre : le meilleur rush par case ; ordre : on avance dans nos rushs dans l'ordre ; un : un seul rush")
     ap.add_argument('--node-modules'); ap.add_argument('--navigateur')
     a = ap.parse_args()
     if a.chercher:
@@ -58,7 +61,8 @@ def main():
     plans = []
     for g in range(max(1, a.variantes)):
         print(f'\nVariante {g} :')
-        plan = rp.remplir(T, P, B, musique=a.musique, M=M, textes=textes, graine=g, duree_max=a.duree, format_=a.format)
+        plan = rp.remplir(T, P, B, musique=a.musique, M=M, textes=textes, graine=g, duree_max=a.duree, format_=a.format,
+                         cadrage=a.cadrage, zooms_mode=a.zooms, melange=a.melange)
         d = os.path.join(out, f'variante-{g}')
         exporter(plan, d, a.pattern, rendu=a.rendu, navigateur=a.navigateur, node_modules=a.node_modules)
         rp.ecrire_rapport(plan, T, os.path.join(d, 'remplissage.md'))

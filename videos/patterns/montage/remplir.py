@@ -76,7 +76,24 @@ def recaler(T, M, duree_max=None):
     return bornes, 0.0, 'durées de l\'original gardées en secondes' + (' (la nouvelle musique n\'a pas de temps nets)' if Tm else '')
 
 
-def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max=None, format_=None, log=print):
+def mode_cadrage(r, W, H, cadrage='auto'):
+    """Comment poser un rush dans le cadre du montage.
+    'recadre' : on remplit l'écran et on coupe les bords, centré sur le sujet (horizontal → vertical, comme TikTok) ;
+    'flou'    : l'image entière au centre, sur un fond flouté d'elle-même (vertical ou carré → horizontal : sinon énorme zoom) ;
+    'auto'    : 'recadre' si on perd moins de 45 % de l'image ou si le rush est plus large que le cadre, sinon 'flou'."""
+    if cadrage in ('recadre', 'flou'): return cadrage
+    rs = (r.get('largeur') or 16) / max(1, r.get('hauteur') or 9); ro = W / H
+    if rs >= ro: return 'recadre'                               # rush plus large que le cadre : on coupe les côtés en suivant le sujet
+    return 'recadre' if rs / ro > 0.8 else 'flou'               # rush plus étroit : on ne zoome pas de plus de 25 %
+
+
+ZOOM_MAX = {'aucun': 0, 'doux': 0.08, 'garder': 0.25}
+
+
+def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max=None, format_=None, log=print,
+            cadrage='auto', zooms_mode='doux', melange='libre'):
+    """cadrage : auto | recadre | flou. zooms_mode : doux (petits zooms, un par case au plus) | garder (comme l'original) | aucun.
+    melange : libre (le meilleur rush pour chaque case) | ordre (on avance dans nos rushs dans l'ordre, sans revenir en arrière) | un (un seul rush pour tout l'edit)."""
     rng = np.random.default_rng(graine)
     R = recette(P)
     if musique and M is None: M = charger_musique(musique)
@@ -87,6 +104,10 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
     fps = round(T.get('fps') or 30)
     utilises = []; clips = []; transitions = []; zooms = []; incr = []; effets = []; rapport = []
     textes = list(textes or []); a_remplacer = []; niveau = 0; prev_rush = None
+    ordre_rushs = [r['chemin'] for r in banque]; pos = (0, 0.0)            # pour melange='ordre' : rush courant, instant courant
+    seul = None
+    if melange == 'un':                                              # le rush qui contient le plus de matière utile
+        seul = max(banque, key=lambda r: (r['duree_s'], sum(1 for e in r['echantillons'] if e.get('personnes'))))['chemin']
     for c, bo in zip(T['cases'], bornes):
         if bo is None: continue
         t0, t1 = bo; d = round(t1 - t0, 3); k = d / max(c['duree_s'], 1e-3)           # k : étirement de la case
@@ -94,7 +115,11 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
         if c.get('vitesse') and besoin.get('mouvement') == 'calme': besoin['mouvement'] = 'moyen'
         cands = []
         for r in banque:
+            if seul and r['chemin'] != seul: continue
+            ri = ordre_rushs.index(r['chemin'])
+            if melange == 'ordre' and not (ri == pos[0] or ri == pos[0] + 1): continue
             for w0, wd, vit in bq.fenetres(r, d):
+                if melange == 'ordre' and ri == pos[0] and w0 < pos[1] - 1e-3: continue
                 s, why, tg = bq.score_fenetre(r, w0, wd, besoin)
                 rec = sum(min(w0 + wd, b_) - max(w0, a_) for ch, a_, b_ in utilises if ch == r['chemin'] and min(w0 + wd, b_) > max(w0, a_))
                 s -= 3 * rec / wd                                   # déjà utilisé : on évite de montrer deux fois la même chose
@@ -102,6 +127,11 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
                 if vit < 1: s -= 2 * (1 - vit)                      # rush trop court → ralenti
                 if (r['orientation'] == 'horizontal') != (fmt == 'horizontal') and r['orientation'] != 'carré': s -= 0.3
                 cands.append((s, r, w0, wd, vit, why, tg))
+        if not cands and melange == 'ordre':                        # fin des rushs : on recommence au premier
+            pos = (0, 0.0)
+            for r in banque[:1]:
+                for w0, wd, vit in bq.fenetres(r, d):
+                    s, why, tg = bq.score_fenetre(r, w0, wd, besoin); cands.append((s, r, w0, wd, vit, why, tg))
         if not cands: continue
         cands.sort(key=lambda x: -x[0])
         if graine:                                                  # variante : tirage parmi les bons candidats (pas deux fois le même passage)
@@ -115,14 +145,16 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
         if tg is not None and vit >= 1:                             # geste : on le fait arriver tôt dans la case (sur la coupe / le temps)
             lead = min(0.25 * d, 0.4); seg = next(sg for sg in r['segments'] if sg['de'] - 1e-3 <= w0 <= sg['a'])
             w0 = round(float(np.clip(tg - lead, seg['de'], seg['a'] - d)), 3)
-        utilises.append((r['chemin'], w0, w0 + wd)); prev_rush = r['chemin']
+        utilises.append((r['chemin'], w0, w0 + wd)); prev_rush = r['chemin']; pos = (ordre_rushs.index(r['chemin']), w0 + wd)
+        mode = mode_cadrage(r, W, H, cadrage)
         # recadrage vers le sujet (format différent) : centre horizontal du sujet à ce moment
         E = [e for e in r['echantillons'] if w0 <= e['t'] <= w0 + wd and e.get('sujet_boite_pct')]
         cx = round(float(np.median([e['sujet_boite_pct'][0] + e['sujet_boite_pct'][2] / 2 for e in E])), 1) if E else 50.0
         ent = c.get('entree') or {}
         if ent.get('type') in RECADRAGE: niveau = 1 - niveau
+        zmax = ZOOM_MAX.get(zooms_mode, 0.08)
         clip = dict(src=r['chemin'], nom=r['nom'], role='B', src_in=round(w0, 3), src_out=round(w0 + wd, 3), t0=t0, t1=t1, mots=[],
-                    zoom=round(1 + 0.12 * niveau, 3), case=c['n'], centre_x_pct=cx, note=round(s, 2), pourquoi=why)
+                    zoom=round(1 + min(0.12, zmax) * niveau, 3), case=c['n'], cadrage=mode, centre_x_pct=cx, note=round(s, 2), pourquoi=why)
         if vit < 1: clip['vitesse'] = vit
         if ent.get('type') in TRANS_OK:
             fr = int(ent.get('images') or (2 if ent['type'] == 'flash blanc' else 8))
@@ -132,13 +164,17 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
         if ent.get('type') and ent['type'] not in TRANS_OK and ent['type'] not in RECADRAGE + ('coupe sèche',): a_faire.append(ent['type'])
         for m in c['masques']: a_faire.append(m['type'])
         if c.get('vitesse'): clip['velocity'] = c['vitesse']; a_faire.append('rampe de vitesse (velocity) ' + (c['vitesse'].get('forme') or ''))
+        z_cur = clip['zoom']; n_z = 0
         for m in c['mouvements']:
             if m['type'] in ZOOMS and m.get('zoom_pct'):
+                if zmax <= 0 or (zooms_mode == 'doux' and (n_z >= 1 or d < 0.6)): continue
                 zt = round(t0 + m['debut_rel_s'] * k, 3); zd = round(min(t1 - zt, max(0.1, (m.get('dur_s') or 0.3) * min(k, 1.5))), 3)
-                if zd > 0.05:
-                    sgn = 1 if m['type'] in ('punch-in', 'poussée lente') else -1
-                    zooms.append(dict(t0=zt, dur_s=zd, de=clip['zoom'], a=round(clip['zoom'] * (1 + sgn * abs(m['zoom_pct']) / 100), 3),
-                                      courbe=m.get('courbe') or 'freine à la fin (ease-out)', plan=len(clips)))
+                if zd < (0.25 if zooms_mode == 'doux' else 0.08): continue
+                amp = min(zmax, abs(m['zoom_pct']) / 100 * (0.5 if zooms_mode == 'doux' else 1))
+                if m['type'] in ('punch-in', 'poussée lente'): de, a = z_cur, z_cur * (1 + amp)
+                else: de, a = z_cur * (1 + amp), z_cur                   # dézoom : on part plus serré et on revient (jamais de bords noirs)
+                zooms.append(dict(t0=zt, dur_s=zd, de=round(de, 3), a=round(a, 3), courbe=m.get('courbe') or 'freine à la fin (ease-out)', plan=len(clips)))
+                z_cur = a; n_z += 1
             elif m['type'] not in ZOOMS: a_faire.append(m['type'])
         clip['effets_image'] = [dict(e, debut_rel_s=round(e['debut_rel_s'] * k, 3), duree_s=round(e['duree_s'] * k, 3)) for e in c['effets']]
         a_faire += [e['type'] for e in c['effets']]

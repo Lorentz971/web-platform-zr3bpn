@@ -30,8 +30,9 @@ for k, (a, b) in enumerate(zip(bornes_t, bornes_t[1:])):
 P = dict(video='origine.mp4', format='vertical 9:16', duree_s=tb[30], fps=30, plans=plans,
          transitions=[dict(type='flash blanc', start_s=tb[16], dur_frames=2, dur_s=0.07), dict(type='glissement', start_s=tb[20], dur_frames=8, dur_s=0.27)],
          mouvements=[dict(type='punch-in', start_s=tb[16] + 0.1, dur_s=0.3, zoom_pct=15)], incrustations=[], effets_image=[],
-         sous_titres=[], textes_a_l_ecran=[dict(text='TITRE ORIGINAL', start_s=tb[0] + 0.2, dur_s=1.5, centre_x_pct=50, centre_y_pct=30, majuscules=True),
-                                            dict(text='SECOND', start_s=tb[16] + 0.05, dur_s=1.0, centre_x_pct=50, centre_y_pct=60, majuscules=True)],
+         sous_titres=[], textes_a_l_ecran=[dict(text='TITRE ORIGINAL', start_s=tb[0] + 0.2, dur_s=1.5, centre_x_pct=50, centre_y_pct=30, hauteur_pct=6, majuscules=True),
+                                            dict(text='LAL 98', start_s=tb[0] + 0.1, dur_s=6, centre_x_pct=90, centre_y_pct=92, hauteur_pct=2),
+                                            dict(text='SECOND', start_s=tb[16] + 0.05, dur_s=1.0, centre_x_pct=50, centre_y_pct=60, hauteur_pct=8, majuscules=True)],
          son=dict(effets_sonores=[dict(type='souffle (whoosh)', t=tb[20] - 0.1)]), musique_detaillee=M0, rythme={})
 
 # --- banque : 5 rushs dont on connaît le contenu
@@ -86,7 +87,7 @@ check('Transitions et zoom repris aux bons endroits', 'flash blanc case 4, gliss
       [(t['type'], plan['clips'][t['plan']]['case']) for t in plan['transitions']] == [('flash blanc', 4), ('glissement', 6)] and len(plan['zooms']) == 1 and plan['zooms'][0]['plan'] == 3)
 tx = [o for o in plan['incrustations'] if o['type'] == 'texte animé']
 ar = plan['textes_a_remplacer']
-check('Nos textes à la place des textes de l\'original', 'NOTRE TITRE affiché ; SECOND non affiché, listé à écrire',
+check('Nos textes à la place des textes de l\'original (pas du score TV)', 'NOTRE TITRE affiché ; SECOND non affiché, listé à écrire',
       ' / '.join(o['texte'] for o in tx) + ' ; à écrire : ' + ' / '.join(o['texte_original'] for o in ar),
       [o['texte'] for o in tx] == ['NOTRE TITRE'] and [o['texte_original'] for o in ar] == ['SECOND'] and abs(tx[0]['centre_pct'][1] - 30) < 1)
 check('Effet sonore repris', 'whoosh juste avant le glissement', ', '.join(f"{e['type']} {e['t']:.2f}" for e in plan['effets']),
@@ -101,6 +102,24 @@ check('Recherche libre (2)', '« décor rapide » → decor-rapide.mp4', q[0]['n
 court = [rush('court.mp4', 1.0, lambda t: dict(cadrage='plan large', personnes=1, mouvement=0.2))]
 pc = rp.remplir(T, P, court, graine=0, log=lambda *a: None)
 check('Rush trop court : ralenti au lieu d\'un trou', 'case 1 remplie avec vitesse < 1', f"vitesse {pc['clips'][0].get('vitesse')}", 0 < (pc['clips'][0].get('vitesse') or 1) < 1)
+
+# --- cadrage, zooms, mélange
+V = dict(largeur=720, hauteur=1280); Hz = dict(largeur=1920, hauteur=1080); C = dict(largeur=576, hauteur=576)
+modes = (rp.mode_cadrage(V, 1920, 1080), rp.mode_cadrage(Hz, 1080, 1920), rp.mode_cadrage(C, 1920, 1080), rp.mode_cadrage(Hz, 1920, 1080))
+check('Cadrage : jamais d\'énorme zoom', 'vertical→horizontal flou, horizontal→vertical recadré, carré→horizontal flou, même format recadré',
+      ', '.join(modes), modes == ('flou', 'recadre', 'flou', 'recadre'))
+zs = [z for p_ in (plan, plan2) for z in p_['zooms']]
+check('Zooms doux : jamais en dessous du cadre (pas de bords noirs), 8 % max', 'min ≥ 1, écart ≤ 8 %',
+      f"min {min(min(z['de'], z['a']) for z in zs):.3f}, écart max {max(abs(z['a'] / z['de'] - 1) for z in zs) * 100:.1f} %",
+      min(min(z['de'], z['a']) for z in zs) >= 1 and max(abs(z['a'] / z['de'] - 1) for z in zs) <= 0.081)
+pa = rp.remplir(T, P, B, musique='notre.wav', M=M1, graine=0, log=lambda *a: None, zooms_mode='aucun')
+check('Zooms : option « aucun »', '0 zoom', f"{len(pa['zooms'])} zoom", len(pa['zooms']) == 0)
+po = rp.remplir(T, P, B, musique='notre.wav', M=M1, graine=0, log=lambda *a: None, melange='ordre')
+idx = [[r['nom'] for r in B].index(c['nom']) for c in po['clips']]
+mono = all(b > a or (b == a and c2['src_in'] >= c1['src_out'] - 1e-3) for (a, c1), (b, c2) in zip(zip(idx, po['clips']), zip(idx[1:], po['clips'][1:])))
+check('Mélange « ordre » : on avance dans nos rushs sans revenir en arrière', 'rushs dans l\'ordre, temps croissant', ' → '.join(str(i) for i in idx), mono)
+pu = rp.remplir(T, P, B, musique='notre.wav', M=M1, graine=0, log=lambda *a: None, melange='un')
+check('Mélange « un » : un seul rush pour tout l\'edit', '1 rush', f"{len({c['nom'] for c in pu['clips']})} rush", len({c['nom'] for c in pu['clips']}) == 1)
 
 ok = sum(r[3] for r in R)
 L = ['# Vérification de l\'étape 3 (modèle, recalage, banque, remplissage, variantes)', '', '| Contrôle | Attendu | Mesuré | |', '|---|---|---|---|']

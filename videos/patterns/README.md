@@ -101,6 +101,15 @@ python3 remplir_modele.py --chercher "gros plan bras levés" MES_RUSHS/    # che
 3. **Remplissage** : pour chaque case, le passage de nos rushs qui correspond le mieux, jamais deux fois le même
    passage, le geste calé juste après la coupe (sur le temps), recadrage vers le sujet si le format change, ralenti si
    le rush est trop court.
+   - `--cadrage auto|recadre|flou` : un rush d'un autre format n'est **jamais agrandi à outrance**. Horizontal dans un
+     montage vertical : recadré en suivant le sujet (comme TikTok). Vertical ou carré dans un montage horizontal : l'image
+     entière au centre, sur un fond flouté d'elle-même. `auto` (par défaut) choisit selon ce qu'on perdrait.
+   - `--zooms doux|garder|aucun` : `doux` (par défaut) garde au plus un petit zoom (8 % max) par case ; un dézoom part
+     d'un peu plus serré et revient (jamais de bords noirs).
+   - `--melange libre|ordre|un` : `libre` (par défaut) prend le meilleur rush pour chaque case ; `ordre` avance dans vos
+     rushs dans l'ordre, sans revenir en arrière (pour raconter une histoire) ; `un` fait tout l'edit avec un seul rush.
+   - Les textes de l'original pris comme cases de texte sont seulement les vrais textes de montage (pas un score TV,
+     un bandeau d'info ou un logo de chaîne, petits et collés aux bords).
 4. **Variantes A/B** : `--variantes 3` fait 3 montages avec d'autres rushs dans les cases, mêmes coupes ;
    `variantes.md` les compare.
 
@@ -134,7 +143,7 @@ modèles, l'outil marche quand même mais estime la voix au lieu de la transcrir
 | `video-test-effets.py` → `verifier_effets.py` | 34 s : les 13 effets d'image, chacun à un moment connu | **14 / 14** (aucune fausse détection) |
 | `video-test-effets2.py` → `verifier_effets2.py` | 20 s : texte qui suit une balle, kaléidoscope, shake sur les temps, cymbale inversée, musique normale et « slowed + reverb » | **6 / 6** |
 | `video-test-musique.py` → `verifier_musique.py` | musique à 128 BPM : intro étouffée, drop à l'ouverture du filtre, silence puis drop | **5 / 5** |
-| `verifier_modele.py` | Une fausse analyse d'edit (120 BPM, drop au temps 16) et une banque de rushs au contenu connu, remplie sur une musique à 95 BPM | **16 / 16** : drop sur le drop, durées au nouveau tempo, coupes sur les temps, bon rush par case, gestes calés, pas de doublon, transitions, textes, bruitages, variantes, recherche |
+| `verifier_modele.py` | Une fausse analyse d'edit (120 BPM, drop au temps 16) et une banque de rushs au contenu connu, remplie sur une musique à 95 BPM | **21 / 21** : drop sur le drop, durées au nouveau tempo, coupes sur les temps, bon rush par case, gestes calés, pas de doublon, transitions, textes (pas le score TV), bruitages, variantes, recherche, cadrage sans énorme zoom, zooms doux sans bords noirs, mélange « ordre » et « un » |
 | La même vidéo n° 2, abîmée | très compressée / caméra à la main / bruit et flou | **36 / 32 / 27 sur 42** (détail dans `verification_v2.md`) |
 | `video-test-rushs.py` | Faux rushs (face caméra + 2 illustrations + musique) pour tester `appliquer_pattern.py --rendu` de bout en bout | conformité de notre montage au pattern : **58 à 61 %** (`conformite-exemple.md`) ; rythme, coupes, débit, sous-titres, barre de progression justes |
 

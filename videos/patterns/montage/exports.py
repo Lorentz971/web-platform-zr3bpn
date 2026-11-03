@@ -33,7 +33,8 @@ def marqueurs(plan, path):
     rows = []
     for i, c in enumerate(plan['clips']):
         rows.append((c['t0'], 'coupe', f"plan {i + 1} : {c['nom']} {c['src_in']:.2f}–{c['src_out']:.2f} s" + (f", cadre ×{c['zoom']}" if c['zoom'] != 1 else '')
-                     + (f", ralenti ×{c['vitesse']}" if c.get('vitesse') else '') + (f" (case {c['case']} du modèle)" if c.get('case') else '')))
+                     + (f", ralenti ×{c['vitesse']}" if c.get('vitesse') else '')
+                     + (", image entière sur fond flouté" if c.get('cadrage') == 'flou' else f", recadré sur le sujet (centre à {c['centre_x_pct']} %)" if c.get('cadrage') == 'recadre' and c.get('centre_x_pct') not in (None, 50.0) else '') + (f" (case {c['case']} du modèle)" if c.get('case') else '')))
         if c.get('a_faire'): rows.append((c['t0'], 'effet à faire', ', '.join(c['a_faire'])))
     for b in plan['illustrations']: rows.append((b['t0'], 'illustration', f"{b['nom']} {b['src_in']:.2f}–{b['src_out']:.2f} s par-dessus la voix, jusqu'à {b['t1']:.2f} s"))
     for t in plan['transitions']: rows.append((t['t'], 'transition', f"{t['type']} ({t['images']} images)"))

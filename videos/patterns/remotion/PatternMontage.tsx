@@ -6,7 +6,7 @@ import {AbsoluteFill, Audio, Easing, OffthreadVideo, Sequence, interpolate, spri
 import '@fontsource/montserrat/900.css';
 import data from './montage-data.json';
 
-type Clip = {src: string; nom: string; role: string; src_in: number; src_out: number; t0: number; t1: number; zoom: number; broll?: boolean; transition_entree?: {type: string; images: number}; vitesse?: number; centre_x_pct?: number};
+type Clip = {src: string; nom: string; role: string; src_in: number; src_out: number; t0: number; t1: number; zoom: number; broll?: boolean; transition_entree?: {type: string; images: number}; vitesse?: number; centre_x_pct?: number; cadrage?: string};
 type Zoom = {t0: number; dur_s: number; de: number; a: number; courbe: string; plan: number};
 const D: any = data;
 const fps: number = D.fps;
@@ -88,9 +88,15 @@ const Plan: React.FC<{clip: Clip; idx: number; muted?: boolean; handle: number}>
         <svg width="0" height="0" style={{position: 'absolute'}}><filter id={`mb${idx}`} x="-10%" y="0" width="120%" height="100%">
           <feGaussianBlur stdDeviation={`${(st as any)._mb} 0`} /></filter></svg>
       ) : null}
+      {clip.cadrage === 'flou' ? (                  // image entière au centre, sur un fond flouté d'elle-même (pas d'énorme zoom)
+        <AbsoluteFill style={{transform: 'scale(1.15)', filter: 'blur(40px) brightness(0.6)', ...grade()}}>
+          <OffthreadVideo src={media(clip.nom)} startFrom={Math.max(0, F(clip.src_in) - handle)} muted playbackRate={clip.vitesse || 1}
+            style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+        </AbsoluteFill>
+      ) : null}
       <AbsoluteFill style={{transform: `scale(${z})`, ...grade()}}>
         <OffthreadVideo src={media(clip.nom)} startFrom={Math.max(0, F(clip.src_in) - handle)} muted={muted} playbackRate={clip.vitesse || 1}
-          style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${clip.centre_x_pct ?? 50}% 50%`}} />
+          style={{width: '100%', height: '100%', objectFit: clip.cadrage === 'flou' ? 'contain' : 'cover', objectPosition: `${clip.centre_x_pct ?? 50}% 50%`}} />
       </AbsoluteFill>
     </AbsoluteFill>
   );

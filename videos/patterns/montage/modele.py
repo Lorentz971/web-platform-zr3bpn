@@ -15,6 +15,15 @@ def _temps(t, M):
     return round(i + (t - tb[i]) / (tb[i + 1] - tb[i]), 2)
 
 
+def texte_de_montage(t):
+    """Un vrai texte d'edit (titre, mot qui claque) et pas un élément de retransmission (score, bandeau d'info, logo de chaîne) :
+    assez gros, pas collé à un bord de l'écran."""
+    h = t.get('hauteur_pct') or 0; x = t.get('centre_x_pct') or 50; y = t.get('centre_y_pct') or 50
+    if h < 2.5: return False
+    if (x < 20 or x > 80 or y < 12 or y > 88) and h < 6: return False
+    return True
+
+
 def construire(P):
     M = P.get('musique_detaillee') or {}
     a_musique = bool(M.get('temps_s'))
@@ -29,7 +38,7 @@ def construire(P):
         effets = [x for x in P.get('effets_image', []) if x['start_s'] < b and x['end_s'] > a and not x['type'].startswith('style global')]
         incr = [o for o in P['incrustations'] if a - 0.05 <= o['start_s'] < b and o['type'] != 'barre de progression']
         masques = [e for e in P['transitions'] if a - 0.05 <= e['start_s'] < b and e.get('sujet_boite_pct')]
-        textes = [c for c in P.get('sous_titres', []) + P.get('textes_a_l_ecran', []) if a - 0.05 <= c['start_s'] < b]
+        textes = [c for c in P.get('sous_titres', []) + P.get('textes_a_l_ecran', []) if a - 0.05 <= c['start_s'] < b and texte_de_montage(c)]
         sons = [x for x in (P.get('son') or {}).get('effets_sonores', []) if a - 0.05 <= x['t'] < b]
         c = s.get('contenu') or {}
         vel = next((m for m in mouvements if 'velocity' in m['type']), None)
