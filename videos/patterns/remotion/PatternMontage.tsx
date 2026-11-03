@@ -142,7 +142,7 @@ const Graphique: React.FC<{o: any}> = ({o}) => {
       fontFamily: 'Montserrat', fontWeight: 900, fontSize: height * 0.03, boxShadow: '0 8px 24px rgba(0,0,0,.35)'}}>{o.texte}</div>);
   if (o.type === 'encart / image' || o.type === 'texte animé') return (
     <div style={{...box, background: o.type === 'texte animé' ? 'transparent' : c, color: o.type === 'texte animé' ? c : '#111', padding: `${height * 0.015}px ${width * 0.05}px`,
-      borderRadius: width * 0.03, fontFamily: 'Montserrat', fontWeight: 900, fontSize: height * (o.type === 'texte animé' ? 0.06 : 0.035),
+      borderRadius: width * 0.03, fontFamily: 'Montserrat', fontWeight: 900, fontSize: o.hauteur_pct ? Math.max(height * 0.03, height * o.hauteur_pct / 100 * 1.35) : height * (o.type === 'texte animé' ? 0.06 : 0.035), whiteSpace: 'nowrap',
       WebkitTextStroke: o.type === 'texte animé' ? `${height * 0.004}px black` : undefined}}>{o.texte}</div>);
   if (o.type === 'forme (flèche…)') return (
     <svg style={{...box}} width={width * 0.36} height={width * 0.16} viewBox="0 0 260 120">

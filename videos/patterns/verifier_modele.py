@@ -85,8 +85,10 @@ check('Transitions et zoom repris aux bons endroits', 'flash blanc case 4, gliss
       ', '.join(f"{t['type']} case {plan['clips'][t['plan']]['case']}" for t in plan['transitions']) + f", {len(plan['zooms'])} zoom",
       [(t['type'], plan['clips'][t['plan']]['case']) for t in plan['transitions']] == [('flash blanc', 4), ('glissement', 6)] and len(plan['zooms']) == 1 and plan['zooms'][0]['plan'] == 3)
 tx = [o for o in plan['incrustations'] if o['type'] == 'texte animé']
-check('Nos textes à la place des textes de l\'original', 'NOTRE TITRE puis SECOND (à remplacer)', ' / '.join(f"{o['texte']}{' (à remplacer)' if o['a_remplacer'] else ''}" for o in tx),
-      [o['texte'] for o in tx] == ['NOTRE TITRE', 'SECOND'] and tx[1]['a_remplacer'] and not tx[0]['a_remplacer'])
+ar = plan['textes_a_remplacer']
+check('Nos textes à la place des textes de l\'original', 'NOTRE TITRE affiché ; SECOND non affiché, listé à écrire',
+      ' / '.join(o['texte'] for o in tx) + ' ; à écrire : ' + ' / '.join(o['texte_original'] for o in ar),
+      [o['texte'] for o in tx] == ['NOTRE TITRE'] and [o['texte_original'] for o in ar] == ['SECOND'] and abs(tx[0]['centre_pct'][1] - 30) < 1)
 check('Effet sonore repris', 'whoosh juste avant le glissement', ', '.join(f"{e['type']} {e['t']:.2f}" for e in plan['effets']),
       len(plan['effets']) == 1 and plan['effets'][0]['type'] == 'whoosh' and -0.3 < plan['effets'][0]['t'] - plan['transitions'][1]['t'] < 0)
 diff = sum(a['nom'] != b['nom'] or abs(a['src_in'] - b['src_in']) > 0.3 for a, b in zip(plan['clips'], plan2['clips']))

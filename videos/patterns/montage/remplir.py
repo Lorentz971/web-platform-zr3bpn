@@ -86,7 +86,7 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
     W, H = (1080, 1920) if fmt == 'vertical' else (1920, 1080) if fmt == 'horizontal' else (1080, 1080)
     fps = round(T.get('fps') or 30)
     utilises = []; clips = []; transitions = []; zooms = []; incr = []; effets = []; rapport = []
-    textes = list(textes or []); n_txt = 0; niveau = 0; prev_rush = None
+    textes = list(textes or []); a_remplacer = []; niveau = 0; prev_rush = None
     for c, bo in zip(T['cases'], bornes):
         if bo is None: continue
         t0, t1 = bo; d = round(t1 - t0, 3); k = d / max(c['duree_s'], 1e-3)           # k : étirement de la case
@@ -149,14 +149,16 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
                                  centre_pct=o.get('centre_pct') or [50, 40], entree=o.get('entree') or 'pop avec rebond', texte=o.get('texte')))
             elif o['type'] not in ('barre de progression',): clip.setdefault('a_faire', []).append(o['type'])
         for tx in c['textes']:
-            n_txt += 1
             nouveau = textes.pop(0) if textes else None
             tt0 = round(t0 + tx['debut_rel_s'] * k, 3)
-            incr.append(dict(type='texte animé', t0=tt0, t1=round(min(tt0 + max(0.4, tx['duree_s'] * k), t1 + 2 * d), 3),
-                             centre_pct=[tx['position'][0] or 50, tx['position'][1] or 40], entree=tx.get('animation') or 'apparition sèche',
-                             texte=(nouveau or tx['texte_original']).upper() if tx.get('majuscules') or nouveau is None and tx['texte_original'].isupper() else (nouveau or tx['texte_original']),
-                             texte_original=tx['texte_original'], a_remplacer=nouveau is None, derriere_le_sujet=tx['derriere_le_sujet'], suit_le_sujet=tx['suit_le_sujet'],
-                             hauteur_pct=tx.get('hauteur_pct'), case=c['n']))
+            o = dict(type='texte animé', t0=tt0, t1=round(min(tt0 + max(0.4, tx['duree_s'] * k), t1 + 2 * d), 3),
+                     centre_pct=[tx['position'][0] or 50, tx['position'][1] or 40], entree=tx.get('animation') or 'apparition sèche',
+                     texte_original=tx['texte_original'], derriere_le_sujet=tx['derriere_le_sujet'], suit_le_sujet=tx['suit_le_sujet'],
+                     hauteur_pct=tx.get('hauteur_pct'), case=c['n'])
+            if nouveau is not None:                                 # notre texte, à la place et dans le style de l'original
+                o['texte'] = nouveau.upper() if tx.get('majuscules') or tx['texte_original'].isupper() else nouveau
+                incr.append(o)
+            else: a_remplacer.append(o)                             # pas de texte à nous : on n'affiche pas celui de l'original
         for sx in c['sons']:
             nom = DEPUIS_ANALYSE.get(sx['type'])
             if nom: effets.append(dict(t=round(max(0, t0 + sx['debut_rel_s'] * k), 3), type=nom, fichier=f'sfx/{nom}.wav'))
@@ -187,7 +189,7 @@ def remplir(T, P, banque, musique=None, M=None, textes=None, graine=0, duree_max
                 style_sous_titres=dict(position_y_pct=(st or {}).get('position_y_pct') or 70, hauteur_texte_pct=(st or {}).get('hauteur_texte_pct') or 4,
                                        couleur_surlignage=(st or {}).get('couleur_surlignage'), majuscules=bool((st or {}).get('majuscules')),
                                        contour_noir=bool((st or {}).get('contour_noir')), animation='apparition sèche'),
-                effets=effets, musique=musd, incrustations=incr, etalonnage=etal, recalage=expl, graine=graine,
+                effets=effets, musique=musd, incrustations=incr, etalonnage=etal, recalage=expl, graine=graine, textes_a_remplacer=a_remplacer,
                 rushs=[dict(nom=r['nom'], chemin=r['chemin'], duree_s=r['duree_s'], role='B') for r in banque], recette=R, remplissage=rapport)
 
 
@@ -205,9 +207,9 @@ def ecrire_rapport(plan, T, path):
             L.append(f"- **case {x['case']}** ({x['t1'] - x['t0']:.1f} s, {x['role'] or 'sans rôle particulier'}) : "
                      + ', '.join(str(v) for v in (b.get('cadrage'), b.get('geste'), b.get('expression'), f"mouvement {b['mouvement']}" if b.get('mouvement') else None) if v)
                      + (f" — il manque : {', '.join(x['manque'])}" if x['manque'] else ''))
-    tx = [o for o in plan['incrustations'] if o.get('a_remplacer')]
+    tx = plan.get('textes_a_remplacer') or []
     if tx:
-        L += ['', '## Textes à remplacer', '', "Ces textes viennent de l'original (même place, même animation) : donnez les vôtres avec `--textes`.", '']
+        L += ['', '## Textes à écrire', '', "L'original a un texte à ces moments (non affiché dans notre montage) : donnez les vôtres avec `--textes \"A|B|…\"`, dans cet ordre.", '']
         L += [f"- case {o['case']} à {o['t0']:.2f} s : « {o['texte_original']} »" for o in tx]
     open(path, 'w', encoding='utf-8').write('\n'.join(L) + '\n')
 
